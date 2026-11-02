@@ -8,12 +8,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 #
 # APP_NAME is the display name — the bundle, the menu bar, what people call it.
 # EXECUTABLE_NAME is the binary inside it, kept lowercase to match the SwiftPM
-# product and the `portman --list` people type. The two are separate because
+# product and the `portmon --list` people type. The two are separate because
 # capitalising a command is unusual and would break anyone scripting it on a
 # case-sensitive volume.
 APP_NAME="${APP_NAME:-Portman}"
-EXECUTABLE_NAME="${EXECUTABLE_NAME:-portman}"
-BUNDLE_ID="${BUNDLE_ID:-is.ian.portman}"
+EXECUTABLE_NAME="${EXECUTABLE_NAME:-portmon}"
+BUNDLE_ID="${BUNDLE_ID:-is.ian.portmon}"
 VERSION="${VERSION:-0.2.0}"
 BUILD_NUMBER="${BUILD_NUMBER:-2}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
@@ -21,7 +21,7 @@ SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 # The feed is served straight from the repo. It's baked into every build's
 # Info.plist and can't move afterwards without orphaning everyone on an older
 # version, so it defaults here rather than being passed in per release.
-SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://raw.githubusercontent.com/iannuttall/portman/main/appcast.xml}"
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://raw.githubusercontent.com/buluma/portmon/main/appcast.xml}"
 
 # The EdDSA public key updates are verified against. Public by design — it ships
 # in the Info.plist of every copy — and pinned here for the same reason as the
@@ -54,7 +54,7 @@ BUILD_DIR="$(swift build -c release "${ARCH_FLAGS[@]}" --show-bin-path)"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
-cp "$BUILD_DIR/portman" "$MACOS_DIR/$EXECUTABLE_NAME"
+cp "$BUILD_DIR/portmon" "$MACOS_DIR/$EXECUTABLE_NAME"
 
 # SwiftPM leaves the full symbol table in a release build — it's over half the
 # binary and nothing at runtime reads it. `-x` drops local symbols only, so

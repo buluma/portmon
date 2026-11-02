@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
-    <title>portman</title>
-    <description>Updates for portman</description>
+    <title>portmon</title>
+    <description>Updates for portmon</description>
     <language>en</language>
 
     <!--
@@ -33,7 +33,7 @@
         </ul>
       ]]></description>
       <enclosure
-        url="https://github.com/iannuttall/portman/releases/download/v0.3.3/portman-0.3.3.dmg"
+        url="https://github.com/buluma/portmon/releases/download/v0.3.3/portmon-0.3.3.dmg"
         length="4487141"
         type="application/octet-stream"
         sparkle:edSignature="5PJ6x9BpbShcx6yYWLu41cXLgqPehULYNsmgZGRSzqbCkz+3yzGuM5tiXFKvjroI8pOEDwKBbdUHexSEk+jBCQ==" />
@@ -50,14 +50,14 @@
         scrollbar takes up less room.</p>
         <ul>
           <li>Rows with the same package name include the shortest useful part of their
-          path. For example, two apps called "site" now read "ian.is / site" and
+          path. For example, two apps called "site" now read "buluma.github.io / site" and
           "islamabad-v1 / site".</li>
           <li>The panel uses a narrower scrollbar while still following your macOS
           scroll-bar visibility setting.</li>
         </ul>
       ]]></description>
       <enclosure
-        url="https://github.com/iannuttall/portman/releases/download/v0.3.2/portman-0.3.2.dmg"
+        url="https://github.com/buluma/portmon/releases/download/v0.3.2/portmon-0.3.2.dmg"
         length="4468194"
         type="application/octet-stream"
         sparkle:edSignature="KbMPpGSr7dNK+HVWEG3xDAdWAdR/QWCyFWPmpnFP/Rscv2tvFRlcIBQqGx8w17ek2SQZ0jFzly7SRCVSIvZzAQ==" />
@@ -88,7 +88,7 @@
         </ul>
       ]]></description>
       <enclosure
-        url="https://github.com/iannuttall/portman/releases/download/v0.3.1/portman-0.3.1.dmg"
+        url="https://github.com/buluma/portmon/releases/download/v0.3.1/portmon-0.3.1.dmg"
         length="4446757"
         type="application/octet-stream"
         sparkle:edSignature="Dlb6yAleK3HSyA5Q/RvXA/mhtgj9qesczTDjIieSJ48Jjt95HH6Gpmf4HP0z37E7GS3kCu3yMcniipWAgpf0AQ==" />
@@ -114,7 +114,7 @@
         </ul>
       ]]></description>
       <enclosure
-        url="https://github.com/iannuttall/portman/releases/download/v0.3.0/portman-0.3.0.dmg"
+        url="https://github.com/buluma/portmon/releases/download/v0.3.0/portmon-0.3.0.dmg"
         length="4424844"
         type="application/octet-stream"
         sparkle:edSignature="EWfd4bgt1uTwKMfhmUhJLK4veuc9KzAajnHFZF7B5aGceVxi5ClYRUSqM1po3SBQaO/fA0tIebf8AQDik+1OAQ==" />
@@ -130,7 +130,7 @@
         <p>First public release.</p>
       ]]></description>
       <enclosure
-        url="https://github.com/iannuttall/portman/releases/download/v0.2.0/portman-0.2.0.dmg"
+        url="https://github.com/buluma/portmon/releases/download/v0.2.0/portmon-0.2.0.dmg"
         length="4403565"
         type="application/octet-stream"
         sparkle:edSignature="ciebtQ73rxioiKEq2Ywxb6KgK1y4XYR+AOzGWzslmKsaY6/jbPT2VFdAhF32QK8nLaJzk/7SAY761dlTNlm8BA==" />

@@ -141,7 +141,7 @@ is not a server problem, and the tooltip enumerates servers. If the dot ever sta
 **Verify the update flow with `PORTMAN_OPEN_ON_LAUNCH=update`.** The panel's overflow menu
 can't be reached through accessibility, so there's no way to click "Check for Updates" from a
 script. That value opens the panel, waits until it's unambiguously up, then asks for an update.
-Test against an isolated bundle ID — `BUNDLE_ID=is.ian.portman.updatecheck VERSION=0.2.9
+Test against an isolated bundle ID — `BUNDLE_ID=is.ian.portmon.updatecheck VERSION=0.2.9
 BUILD_NUMBER=3 ./scripts/build-app.sh` — so Sparkle's state doesn't land in the real domain.
 Sparkle only runs a scheduled check in a *fresh* domain, so `defaults delete` it between runs;
 deleting `SULastCheckTime` alone isn't enough. `SUEnableAutomaticChecks -bool YES` exercises the
@@ -203,8 +203,8 @@ The app's name and identity are build variables (`APP_NAME`, `EXECUTABLE_NAME`, 
 source.
 
 `APP_NAME` is the display name and `EXECUTABLE_NAME` the binary inside the bundle, and they
-differ on purpose: `Portman.app` containing `MacOS/portman`. Capitalising a command is
-unusual, and it would break anyone scripting `portman` on a case-sensitive volume. The DMG
+differ on purpose: `Portman.app` containing `MacOS/portmon`. Capitalising a command is
+unusual, and it would break anyone scripting `portmon` on a case-sensitive volume. The DMG
 takes the lowercase name too, because it ends up in a download URL that the appcast has
 already published.
 
@@ -212,8 +212,8 @@ already published.
 
 ```sh
 swift build                  # build
-swift run portman            # run from source (no bundle: previews and login items won't work)
-swift run portman --list     # scan and print as TSV — fastest way to check detection
+swift run portmon            # run from source (no bundle: previews and login items won't work)
+swift run portmon --list     # scan and print as TSV — fastest way to check detection
 swift test                   # pure-logic tests
 make build                   # build dist/Portman.app
 make publish-local           # build, sign, install to ~/Applications, relaunch
@@ -231,7 +231,7 @@ nil-safe metric sorting, sibling-port folding, conflict detection, classificatio
 ancestry trust, tunnel URL extraction. The UI is untested.
 
 For anything touching live processes, verify against real state rather than reasoning about
-it. `swift run portman --list` before and after a detection change is the quickest useful
+it. `swift run portmon --list` before and after a detection change is the quickest useful
 diff.
 
 Several bugs here were only visible when the built app was actually launched — a dynamic-link
@@ -271,7 +271,7 @@ The rest is the icon: `Assets.car` (1.45 MB, the layered icon macOS 26 renders i
 that's the floor unless the minimum target moves to macOS 26.
 
 Verify a universal build with `lipo -archs` on the app binary *and* on Sparkle's five Mach-Os,
-then run the Intel slice under Rosetta — `arch -x86_64 …/MacOS/portman --list`. Sparkle is a
+then run the Intel slice under Rosetta — `arch -x86_64 …/MacOS/portmon --list`. Sparkle is a
 load-time dependency, so the app surviving launch under `arch -x86_64` is what proves its Intel
 slice resolves.
 

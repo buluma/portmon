@@ -21,7 +21,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 APP_NAME="${APP_NAME:-Portman}"
-EXECUTABLE_NAME="${EXECUTABLE_NAME:-portman}"
+EXECUTABLE_NAME="${EXECUTABLE_NAME:-portmon}"
 VERSION="${VERSION:?set VERSION, e.g. VERSION=0.3.0}"
 BUILD_NUMBER="${BUILD_NUMBER:?set BUILD_NUMBER, e.g. BUILD_NUMBER=3}"
 SIGN_IDENTITY="${SIGN_IDENTITY:?set SIGN_IDENTITY to a Developer ID Application identity}"
@@ -30,7 +30,7 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 DIST="$ROOT/dist"
 APP_DIR="$DIST/$APP_NAME.app"
 # Lowercase, from the executable name: this ends up in the download URL and in
-# the appcast enclosure, and 0.2.0 already shipped as portman-0.2.0.dmg.
+# the appcast enclosure, and 0.2.0 already shipped as portmon-0.2.0.dmg.
 DMG_NAME="$EXECUTABLE_NAME-$VERSION.dmg"
 DMG_PATH="$DIST/$DMG_NAME"
 
@@ -141,7 +141,7 @@ Add an <item> to appcast.xml, then commit it — that file IS the update feed:
     <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
     <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
     <enclosure
-      url="https://github.com/iannuttall/portman/releases/download/v$VERSION/$DMG_NAME"
+      url="https://github.com/buluma/portmon/releases/download/v$VERSION/$DMG_NAME"
       length="$SIZE"
       type="application/octet-stream"
       sparkle:edSignature="$ED_SIGNATURE" />

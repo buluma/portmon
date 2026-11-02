@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="${APP_NAME:-Portman}"
-EXECUTABLE_NAME="${EXECUTABLE_NAME:-portman}"
+EXECUTABLE_NAME="${EXECUTABLE_NAME:-portmon}"
 SOURCE_APP="$ROOT/dist/$APP_NAME.app"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/Applications}"
 INSTALLED_APP="$INSTALL_DIR/$APP_NAME.app"

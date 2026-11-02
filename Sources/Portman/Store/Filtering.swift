@@ -373,7 +373,7 @@ enum ListShaper {
 
     /// Package names such as `site` and `app` are common inside monorepos. When
     /// more than one visible project has the same name, prefix each with the
-    /// shortest useful part of its path: `ian.is / site`, not the full root.
+    /// shortest useful part of its path: `buluma.github.io / site`, not the full root.
     private static func disambiguateProjectNames(in sections: [ServerSection]) -> [ServerSection] {
         let rows = sections.flatMap(\.rows)
         let duplicates = Dictionary(grouping: rows) { $0.entry.title.lowercased() }

@@ -3,12 +3,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "portman",
+    name: "portmon",
     platforms: [
         .macOS(.v15)
     ],
     products: [
-        .executable(name: "portman", targets: ["Portman"])
+        .executable(name: "portmon", targets: ["Portman"])
     ],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")

@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/portman-mark-dark.svg">
-  <img src="docs/assets/portman-mark.svg" alt="Portman" height="72">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/portmon-mark-dark.svg">
+  <img src="docs/assets/portmon-mark.svg" alt="Portman" height="72">
 </picture>
 
 # Portman
@@ -12,8 +12,8 @@
 A menu bar app that names every dev server on your Mac by project and framework, spots the
 ones that have quietly died, and kills the ones you forgot.
 
-[Download for macOS](https://github.com/iannuttall/portman/releases/latest) ·
-[ian.is/portman](https://ian.is/portman) · MIT licensed
+[Download for macOS](https://github.com/buluma/portmon/releases/latest) ·
+[buluma.github.io/portmon](https://buluma.github.io/portmon) · MIT licensed
 
 </div>
 
@@ -29,7 +29,7 @@ If you run one dev server at a time, you don't need this.
 
 ## Quick start
 
-[Download the DMG](https://github.com/iannuttall/portman/releases/latest) and drag it to
+[Download the DMG](https://github.com/buluma/portmon/releases/latest) and drag it to
 Applications. Requires **macOS 15 or later**, on Apple Silicon or Intel.
 
 Press **⌥⌘P** from anywhere, or click the plug in the menu bar, and start typing.
@@ -150,11 +150,11 @@ spctl --assess --type execute /Applications/Portman.app
 **Checksums.** Run this against the file you downloaded:
 
 ```sh
-shasum -a 256 ~/Downloads/portman-*.dmg
+shasum -a 256 ~/Downloads/portmon-*.dmg
 ```
 
 The expected value is in the
-[release notes](https://github.com/iannuttall/portman/releases/latest) for that version. If the
+[release notes](https://github.com/buluma/portmon/releases/latest) for that version. If the
 two don't match, the file isn't the one I built, so don't open it.
 
 **Or build it yourself.** See below. The build scripts are in this repo too.
@@ -171,8 +171,8 @@ Nothing else requires a permission prompt. There is no privileged helper.
 
 ```sh
 swift build                  # build
-swift run portman            # run from source
-swift run portman --list     # scan and print as TSV, no UI
+swift run portmon            # run from source
+swift run portmon --list     # scan and print as TSV, no UI
 swift test                   # pure-logic tests
 make build                   # build dist/Portman.app
 make publish-local           # build, sign, install to ~/Applications

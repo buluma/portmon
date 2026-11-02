@@ -23,7 +23,7 @@ final class PortScannerTests: XCTestCase {
         XCTAssertEqual(snapshots.count, 2)
         XCTAssertEqual(snapshots[0].pid, 1234)
         XCTAssertEqual(snapshots[0].command, "node")
-        XCTAssertEqual(snapshots[0].user, "iannuttall")
+        XCTAssertEqual(snapshots[0].user, "buluma")
         XCTAssertEqual(Set(snapshots[0].ports.keys), [3000])
         XCTAssertEqual(snapshots[0].ports[3000], ["127.0.0.1", "[::1]"])
         XCTAssertEqual(snapshots[1].ports[5432], ["*"])
@@ -99,7 +99,7 @@ final class DockerScannerTests: XCTestCase {
     func testParsesPSRowsIntoContainers() {
         let row = [
             "abc123", "ianis-db-1", "postgres:16", "0.0.0.0:5432->5432/tcp",
-            "ianis", "db", "/Users/someone/code/ian.is"
+            "ianis", "db", "/Users/someone/code/buluma.github.io"
         ].joined(separator: "\t")
 
         let containers = DockerScanner.parse(row)
@@ -243,7 +243,7 @@ final class FoldingTests: XCTestCase {
                 project: project(
                     name: "site",
                     framework: "Astro",
-                    path: "/Users/test/dev/sites/ian.is/apps/site"
+                    path: "/Users/test/dev/sites/buluma.github.io/apps/site"
                 )
             ),
             makeEntry(
@@ -264,7 +264,7 @@ final class FoldingTests: XCTestCase {
             order: .port
         ).flatMap(\.rows)
 
-        XCTAssertEqual(rows.map(\.projectQualifier), ["ian.is", "islamabad-v1"])
+        XCTAssertEqual(rows.map(\.projectQualifier), ["buluma.github.io", "islamabad-v1"])
     }
 
     func testLeavesUniqueProjectNamesUnqualified() {

@@ -8,7 +8,7 @@ enum AppInfo {
     static let displayName = "Portman"
 
     static var bundleID: String {
-        Bundle.main.bundleIdentifier ?? "is.ian.portman"
+        Bundle.main.bundleIdentifier ?? "is.ian.portmon"
     }
 
     static var version: String {
@@ -18,7 +18,7 @@ enum AppInfo {
     /// Namespace for caches on disk. Falls back to a literal when running outside a
     /// bundle, which is what `swift run` does.
     static var cacheNamespace: String {
-        Bundle.main.bundleIdentifier ?? "is.ian.portman"
+        Bundle.main.bundleIdentifier ?? "is.ian.portmon"
     }
 
     /// How the app identifies itself when probing a port. This lands in other
