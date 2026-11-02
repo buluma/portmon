@@ -8,23 +8,23 @@ let package = Package(
         .macOS(.v15)
     ],
     products: [
-        .executable(name: "portmon", targets: ["Portman"])
+        .executable(name: "portmon", targets: ["Portmon"])
     ],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
     ],
     targets: [
         .executableTarget(
-            name: "Portman",
+            name: "Portmon",
             dependencies: [
                 .product(name: "Sparkle", package: "Sparkle")
             ],
-            path: "Sources/Portman"
+            path: "Sources/Portmon"
         ),
         .testTarget(
-            name: "PortmanTests",
-            dependencies: ["Portman"],
-            path: "Tests/PortmanTests"
+            name: "PortmonTests",
+            dependencies: ["Portmon"],
+            path: "Tests/PortmonTests"
         )
     ]
 )

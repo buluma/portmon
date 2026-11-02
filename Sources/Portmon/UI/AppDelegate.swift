@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // "update" opens the panel and then asks for an update, which is the only way to
         // check that Sparkle's window doesn't open behind it — the panel's menu can't be
         // reached by accessibility.
-        let debugOpen = ProcessInfo.processInfo.environment["PORTMAN_OPEN_ON_LAUNCH"]
+        let debugOpen = ProcessInfo.processInfo.environment["Portmon_OPEN_ON_LAUNCH"]
 
         if debugOpen == "settings" {
             SettingsWindow.shared.show(store: store)

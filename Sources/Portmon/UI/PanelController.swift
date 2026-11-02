@@ -130,7 +130,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     ///
     /// A badge rather than an orange plug. The plug is the app's identity in a strip of
     /// twenty other icons, and recolouring the whole thing reads as an error state for
-    /// Portman itself; a badge reads as "one of your servers". It also means the signal
+    /// Portmon itself; a badge reads as "one of your servers". It also means the signal
     /// carries shape as well as colour, which a recolour alone doesn't.
     private static func statusItemImage(alerting: Bool) -> NSImage? {
         guard let symbol = plugSymbol() else { return nil }

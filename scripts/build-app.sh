@@ -11,7 +11,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # product and the `portmon --list` people type. The two are separate because
 # capitalising a command is unusual and would break anyone scripting it on a
 # case-sensitive volume.
-APP_NAME="${APP_NAME:-Portman}"
+APP_NAME="${APP_NAME:-Portmon}"
 EXECUTABLE_NAME="${EXECUTABLE_NAME:-portmon}"
 BUNDLE_ID="${BUNDLE_ID:-is.ian.portmon}"
 VERSION="${VERSION:-0.2.0}"

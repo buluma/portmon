@@ -1,6 +1,6 @@
 # Agent Notes
 
-Portman is a macOS menu bar app that lists everything listening locally, identifies what it
+Portmon is a macOS menu bar app that lists everything listening locally, identifies what it
 is, and lets you act on it. Swift 6, SwiftUI hosted in an AppKit panel, SwiftPM only — there
 is no Xcode project.
 
@@ -11,7 +11,7 @@ that was found the hard way, and undoing one reintroduces it.
 
 The category is crowded with apps that list ports and kill them. That part is a commodity.
 
-Portman's edge is **knowing what a server actually is** — the project, the framework and
+Portmon's edge is **knowing what a server actually is** — the project, the framework and
 version, the git branch, whether it's still answering, what page it's serving. Detection is
 the moat. When choosing between two implementations, favour the one that identifies things
 more precisely, even if it costs more work.
@@ -26,14 +26,14 @@ in the expanded row, not on it. Rows default to Simple density for this reason.
 ## Repo Map
 
 ```
-Sources/Portman/
+Sources/Portmon/
   Core/        scanning, project + framework detection, Docker, metrics, git, ancestry
   Services/    health probing, page previews, tunnels, terminal attach, app launching
   Store/       ServerStore (@Observable), filtering/sorting/grouping, preferences
   UI/          status item, panel, list, detail card, settings, hotkey, theme
   main.swift   CLI entry (--list, --login-status, --enable-login, --disable-login)
 
-Tests/PortmanTests/     pure-logic tests only
+Tests/PortmonTests/     pure-logic tests only
 Resources/AppIcon.icon  Icon Composer document, compiled by actool at build time
 scripts/                build-app.sh, build-dmg.sh, install-local.sh, release.sh, icon/
 ```
@@ -138,7 +138,7 @@ panel, not a dialog appearing somewhere they can't see.
 is not a server problem, and the tooltip enumerates servers. If the dot ever starts meaning
 "something, somewhere" both signals stop being worth reading.
 
-**Verify the update flow with `PORTMAN_OPEN_ON_LAUNCH=update`.** The panel's overflow menu
+**Verify the update flow with `Portmon_OPEN_ON_LAUNCH=update`.** The panel's overflow menu
 can't be reached through accessibility, so there's no way to click "Check for Updates" from a
 script. That value opens the panel, waits until it's unambiguously up, then asks for an update.
 Test against an isolated bundle ID — `BUNDLE_ID=is.ian.portmon.updatecheck VERSION=0.2.9
@@ -203,7 +203,7 @@ The app's name and identity are build variables (`APP_NAME`, `EXECUTABLE_NAME`, 
 source.
 
 `APP_NAME` is the display name and `EXECUTABLE_NAME` the binary inside the bundle, and they
-differ on purpose: `Portman.app` containing `MacOS/portmon`. Capitalising a command is
+differ on purpose: `Portmon.app` containing `MacOS/portmon`. Capitalising a command is
 unusual, and it would break anyone scripting `portmon` on a case-sensitive volume. The DMG
 takes the lowercase name too, because it ends up in a download URL that the appcast has
 already published.
@@ -215,12 +215,12 @@ swift build                  # build
 swift run portmon            # run from source (no bundle: previews and login items won't work)
 swift run portmon --list     # scan and print as TSV — fastest way to check detection
 swift test                   # pure-logic tests
-make build                   # build dist/Portman.app
+make build                   # build dist/Portmon.app
 make publish-local           # build, sign, install to ~/Applications, relaunch
 make dmg                     # drag-install DMG
 ```
 
-`PORTMAN_OPEN_ON_LAUNCH=1|expand|settings|update` drives the panel on launch, for screenshots
+`Portmon_OPEN_ON_LAUNCH=1|expand|settings|update` drives the panel on launch, for screenshots
 and UI checks without a real click. `update` also asks Sparkle for an update once the panel is
 up — see the Traps entry, which has the rest of the setup that check needs.
 

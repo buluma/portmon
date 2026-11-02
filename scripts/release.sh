@@ -14,13 +14,13 @@ set -euo pipefail
 #   BUILD_NUMBER       monotonic integer
 #
 # Store notary credentials once:
-#   xcrun notarytool store-credentials "portmanager" \
+#   xcrun notarytool store-credentials "Portmonager" \
 #     --apple-id you@example.com --team-id TEAMID --password APP_SPECIFIC_PASSWORD
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-APP_NAME="${APP_NAME:-Portman}"
+APP_NAME="${APP_NAME:-Portmon}"
 EXECUTABLE_NAME="${EXECUTABLE_NAME:-portmon}"
 VERSION="${VERSION:?set VERSION, e.g. VERSION=0.3.0}"
 BUILD_NUMBER="${BUILD_NUMBER:?set BUILD_NUMBER, e.g. BUILD_NUMBER=3}"

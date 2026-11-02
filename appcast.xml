@@ -74,7 +74,7 @@
         window.</p>
         <ul>
           <li>A new version waits in the panel footer as a button naming it, rather than
-          putting a dialog in front of whatever you were doing. Portman lives in the menu
+          putting a dialog in front of whatever you were doing. Portmon lives in the menu
           bar, so that dialog usually opened behind your work, where you might never
           notice it.</li>
           <li>Asking for an update now closes the panel first. The update window used to

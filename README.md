@@ -2,10 +2,10 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/portmon-mark-dark.svg">
-  <img src="docs/assets/portmon-mark.svg" alt="Portman" height="72">
+  <img src="docs/assets/portmon-mark.svg" alt="Portmon" height="72">
 </picture>
 
-# Portman
+# Portmon
 
 **Find and kill zombie dev servers.**
 
@@ -46,7 +46,7 @@ Astro, Next.js, TanStack Start, Vite, Remix, SvelteKit, Nuxt, Angular, Expo, Rai
 FastAPI and more.
 
 **It catches wedged servers.** A dev server that's holding its port but no longer answering
-looks identical to a healthy one everywhere else. Portman probes each port and flags it as
+looks identical to a healthy one everywhere else. Portmon probes each port and flags it as
 `alive, but not responding`. That distinction is the difference between "why is 3000 taken"
 and "oh, that one's hung".
 
@@ -110,7 +110,7 @@ Requests reach your dev server with `Host: localhost:<port>`, so Vite, Next and 
 them instead of answering "This host is not allowed". You don't need to touch `allowedHosts`.
 
 **Shared links are deliberately temporary.** A tunnel closes when you stop it, quit, or
-restart Portman, and you get a new address next time. Portman also kills any tunnel left
+restart Portmon, and you get a new address next time. Portmon also kills any tunnel left
 behind by a previous session at launch, so a public URL can never outlive the app that opened
 it.
 
@@ -143,8 +143,8 @@ requests are to your own localhost ports, and to Cloudflare if you explicitly sh
 **Signed and notarised**, so macOS can verify it hasn't been tampered with since it was built:
 
 ```sh
-codesign --verify --deep --strict --verbose=2 /Applications/Portman.app
-spctl --assess --type execute /Applications/Portman.app
+codesign --verify --deep --strict --verbose=2 /Applications/Portmon.app
+spctl --assess --type execute /Applications/Portmon.app
 ```
 
 **Checksums.** Run this against the file you downloaded:
@@ -162,7 +162,7 @@ two don't match, the file isn't the one I built, so don't open it.
 ## What macOS will ask you for
 
 Focusing the terminal tab a server runs in uses AppleScript, so macOS asks for Automation
-access the first time. Declining is fine, and Portman falls back to opening a new terminal
+access the first time. Declining is fine, and Portmon falls back to opening a new terminal
 at the project root, which is what happens anyway for servers that have outlived their shell.
 
 Nothing else requires a permission prompt. There is no privileged helper.
@@ -174,7 +174,7 @@ swift build                  # build
 swift run portmon            # run from source
 swift run portmon --list     # scan and print as TSV, no UI
 swift test                   # pure-logic tests
-make build                   # build dist/Portman.app
+make build                   # build dist/Portmon.app
 make publish-local           # build, sign, install to ~/Applications
 make dmg                     # drag-install DMG
 ```
@@ -212,7 +212,7 @@ message saying so rather than pretending it worked.
 ### Does it run on Intel Macs?
 
 Yes. The release is a universal binary, so it runs natively on Apple Silicon and Intel, with no
-Rosetta. If your Mac runs macOS 15, it runs Portman.
+Rosetta. If your Mac runs macOS 15, it runs Portmon.
 
 ### Why isn't it on the Mac App Store?
 
