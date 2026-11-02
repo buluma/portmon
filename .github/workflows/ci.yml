@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Uses libproc, so this can't run on Linux.
+    #
+    # macOS 26, not 15, even though the app's deployment target is 15: the panel
+    # background calls `glassEffect`, and `if #available(macOS 26)` only defers
+    # the *call* to runtime — the symbol still has to exist in the SDK at compile
+    # time. On the macos-15 image it doesn't, so CI failed to build code that
+    # compiles and ships fine. The runner picks the SDK; LSMinimumSystemVersion
+    # still says 15.0.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      - name: Build
+        run: swift build --build-tests
+
+      - name: Test
+        run: swift test
+
+      # Proves the bundle still assembles and that Sparkle embeds and loads —
+      # library validation problems only surface at launch, not at build time.
+      - name: Build app bundle
+        run: ./scripts/build-app.sh
+
+      - name: Verify the bundle launches
+        run: |
+          "dist/Portman.app/Contents/MacOS/portman" & PID=$!
+          sleep 6
+          if kill -0 $PID 2>/dev/null; then
+            echo "launched and stayed up"
+            kill $PID
+          else
+            echo "::error::the app exited on launch — check dynamic linking"
+            exit 1
+          fi
+
+      - name: Verify signature
+        run: codesign --verify --deep --strict --verbose=1 "dist/Portman.app"
+
+      - name: Scan detection without the UI
+        run: swift run portman --list | head -20

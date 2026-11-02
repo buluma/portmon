@@ -1,0 +1,321 @@
+import SwiftUI
+
+// MARK: - Status dot
+
+struct StatusDot: View {
+    let entry: ServerEntry
+
+    var body: some View {
+        Circle()
+            .fill(Theme.Colour.dot(for: entry))
+            .frame(width: Theme.Size.statusDot, height: Theme.Size.statusDot)
+            .overlay {
+                // A hung server gets a ring so it reads differently from healthy
+                // even for someone who can't separate green from orange.
+                if entry.health?.state == .hung {
+                    Circle().strokeBorder(Theme.Colour.hung, lineWidth: 1.5).scaleEffect(1.7)
+                }
+            }
+            .help(healthDescription)
+    }
+
+    private var healthDescription: String {
+        switch entry.state {
+        case .staleWorktree: return "Project files are gone — stale worktree"
+        case .orphan: return "Project folder is missing"
+        case .active: break
+        }
+
+        switch entry.health?.state {
+        case .hung: return "Holding the port but not responding"
+        case .healthy: return "Responding"
+        case .nonHTTP: return "Listening (not HTTP)"
+        case .refused: return "Connection refused"
+        default: return "Listening"
+        }
+    }
+}
+
+// MARK: - Chip
+
+/// Small pill used for frameworks, Docker, and state callouts.
+///
+/// A filled chip draws its label on a solid tint rather than tinted text on a 14%
+/// wash — yellow-on-wash was illegible against the panel material in both light
+/// and dark. `help` is required for state chips so "orphan" can explain itself.
+struct Chip: View {
+    let text: String
+    var tint: Color?
+    var help: String?
+
+    var body: some View {
+        Text(text)
+            .font(Theme.Typography.badge)
+            .foregroundStyle(tint == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.white))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1.5)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.chip - 2)
+                    .fill(tint ?? Theme.Colour.chipFill)
+            )
+            .help(help ?? text)
+    }
+}
+
+// MARK: - Filter chip
+
+struct FilterChip: View {
+    let label: String
+    let isActive: Bool
+    let count: Int?
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Text(label)
+                if let count, count > 0 {
+                    Text("\(count)")
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .font(Theme.Typography.button)
+            .foregroundStyle(isActive ? Color.accentColor : .secondary)
+            .padding(.horizontal, Theme.Space.regular)
+            .padding(.vertical, Theme.Space.tight)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                    .fill(background)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(Theme.Motion.hover) { isHovered = hovering }
+        }
+    }
+
+    private var background: Color {
+        if isActive { return Theme.Colour.chipFillActive }
+        return isHovered ? Theme.Colour.chipFill : .clear
+    }
+}
+
+// MARK: - Meta label
+
+/// One `icon + value` pair on a row's second line.
+struct MetaLabel: View {
+    let symbol: String?
+    let text: String
+    var tint: Color?
+
+    var body: some View {
+        HStack(spacing: 3) {
+            if let symbol {
+                Image(systemName: symbol)
+                    .font(.system(size: 9))
+            }
+            Text(text)
+        }
+        .font(Theme.Typography.meta)
+        .foregroundStyle(tint ?? .secondary)
+    }
+}
+
+// MARK: - Action button
+
+struct ActionButton: View {
+    let label: String
+    var symbol: String?
+    var destructive = false
+    var prominent = false
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 10, weight: .medium))
+                }
+                Text(label)
+            }
+            .font(Theme.Typography.button)
+            .foregroundStyle(foreground)
+            .padding(.horizontal, Theme.Space.regular)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                    .fill(background)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(Theme.Motion.hover) { isHovered = hovering }
+        }
+    }
+
+    private var foreground: Color {
+        if destructive { return isHovered ? .white : Theme.Colour.destructive }
+        if prominent { return isHovered ? .white : .accentColor }
+        return .primary
+    }
+
+    private var background: Color {
+        if destructive { return isHovered ? Theme.Colour.destructive : Theme.Colour.destructive.opacity(0.12) }
+        if prominent { return isHovered ? .accentColor : Color.accentColor.opacity(0.14) }
+        return isHovered ? Theme.Colour.chipFill.opacity(2) : Theme.Colour.chipFill
+    }
+}
+
+// MARK: - Icon button
+
+struct IconButton: View {
+    let symbol: String
+    let help: String
+    var destructive = false
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(destructive && isHovered ? Theme.Colour.destructive : .secondary)
+                .frame(width: 22, height: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.Radius.chip - 1)
+                        .fill(isHovered ? Theme.Colour.chipFill : .clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .onHover { hovering in
+            withAnimation(Theme.Motion.hover) { isHovered = hovering }
+        }
+    }
+}
+
+// MARK: - Section header
+
+struct SectionHeader: View {
+    let title: String
+    var count: Int?
+    var isCollapsed: Bool?
+    var toggle: (() -> Void)?
+    var killAll: (() -> Void)?
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: Theme.Space.snug) {
+            if let isCollapsed {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+                    .foregroundStyle(.tertiary)
+            }
+
+            Text(title.uppercased())
+                .font(Theme.Typography.sectionHeader)
+                .foregroundStyle(.secondary)
+                .kerning(0.4)
+
+            if let count {
+                Text("\(count)")
+                    .font(Theme.Typography.sectionHeader)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+
+            // Clearing out a pile of dead servers is the whole point of these
+            // sections, so the action lives right on the header.
+            if let killAll, isHovered {
+                Button(action: killAll) {
+                    Text("Kill all")
+                        .font(Theme.Typography.badge)
+                        .foregroundStyle(Theme.Colour.destructive)
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity)
+            }
+        }
+        .padding(.horizontal, Theme.Space.gutter)
+        .padding(.top, Theme.Space.comfy)
+        .padding(.bottom, Theme.Space.tight)
+        .contentShape(Rectangle())
+        .onTapGesture { toggle?() }
+        .onHover { hovering in
+            withAnimation(Theme.Motion.hover) { isHovered = hovering }
+        }
+    }
+}
+
+// MARK: - Sparkline
+
+/// Tiny CPU history trace. Deliberately unlabelled — it's a texture that shows
+/// "busy or idle" at a glance, and the exact number is right next to it.
+///
+/// Two rules keep it calm enough to sit in a list that refreshes every two seconds:
+///
+/// - **Fixed y scale.** Scaling to the window's own maximum meant an idle server
+///   bouncing between 0% and 4% redrew as a full-height cliff every refresh. The
+///   axis is floored, so idle noise stays a flat line near the bottom and only real
+///   load climbs.
+/// - **Fixed x slots.** Points occupy `capacity` slots and fill from the right, so
+///   samples slide in rather than the whole trace restretching as history grows.
+struct Sparkline: View {
+    let values: [Double]
+    var tint: Color = .secondary
+    var capacity: Int = 24
+    var minimumScale: Double = 25
+
+    var body: some View {
+        GeometryReader { geometry in
+            let ceiling = max(values.max() ?? 0, minimumScale)
+            let slots = max(capacity - 1, 1)
+            let step = geometry.size.width / CGFloat(slots)
+            let offset = max(capacity - values.count, 0)
+
+            Path { path in
+                for (index, value) in values.enumerated() {
+                    let clamped = min(max(value, 0), ceiling)
+                    let x = CGFloat(offset + index) * step
+                    let y = geometry.size.height * (1 - CGFloat(clamped / ceiling))
+                    let point = CGPoint(x: x, y: y)
+
+                    if index == 0 {
+                        path.move(to: point)
+                    } else {
+                        path.addLine(to: point)
+                    }
+                }
+            }
+            .stroke(
+                tint.opacity(0.7),
+                style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round)
+            )
+        }
+        .frame(width: Theme.Size.sparklineWidth, height: Theme.Size.sparklineHeight)
+    }
+}
+
+// MARK: - Panel background
+
+/// Liquid Glass on Tahoe, a plain material everywhere else.
+struct PanelBackground: View {
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            RoundedRectangle(cornerRadius: Theme.Panel.cornerRadius)
+                .fill(.ultraThinMaterial)
+                .glassEffect(in: .rect(cornerRadius: Theme.Panel.cornerRadius))
+        } else {
+            RoundedRectangle(cornerRadius: Theme.Panel.cornerRadius)
+                .fill(.ultraThinMaterial)
+        }
+    }
+}

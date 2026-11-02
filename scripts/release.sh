@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds, signs, notarizes and staples a release DMG, then updates the appcast.
+#
+# Everything identity-related comes from the environment, because the app is signed
+# by a different account than the one it's developed on:
+#
+#   SIGN_IDENTITY      "Developer ID Application: Name (TEAMID)"
+#   NOTARY_PROFILE     name of a stored notarytool profile (see below)
+#   SPARKLE_FEED_URL   defaults to the appcast in this repo; override only to test
+#   SPARKLE_PUBLIC_KEY the EdDSA public key printed by Sparkle's generate_keys
+#   VERSION            e.g. 0.3.0
+#   BUILD_NUMBER       monotonic integer
+#
+# Store notary credentials once:
+#   xcrun notarytool store-credentials "portmanager" \
+#     --apple-id you@example.com --team-id TEAMID --password APP_SPECIFIC_PASSWORD
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+APP_NAME="${APP_NAME:-Portman}"
+EXECUTABLE_NAME="${EXECUTABLE_NAME:-portman}"
+VERSION="${VERSION:?set VERSION, e.g. VERSION=0.3.0}"
+BUILD_NUMBER="${BUILD_NUMBER:?set BUILD_NUMBER, e.g. BUILD_NUMBER=3}"
+SIGN_IDENTITY="${SIGN_IDENTITY:?set SIGN_IDENTITY to a Developer ID Application identity}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+
+DIST="$ROOT/dist"
+APP_DIR="$DIST/$APP_NAME.app"
+# Lowercase, from the executable name: this ends up in the download URL and in
+# the appcast enclosure, and 0.2.0 already shipped as portman-0.2.0.dmg.
+DMG_NAME="$EXECUTABLE_NAME-$VERSION.dmg"
+DMG_PATH="$DIST/$DMG_NAME"
+
+echo "==> Building $APP_NAME $VERSION ($BUILD_NUMBER)"
+APP_NAME="$APP_NAME" VERSION="$VERSION" BUILD_NUMBER="$BUILD_NUMBER" \
+  SIGN_IDENTITY="$SIGN_IDENTITY" ./scripts/build-app.sh
+
+echo "==> Verifying signature"
+codesign --verify --deep --strict --verbose=1 "$APP_DIR"
+
+# Notarization rejects anything without the hardened runtime, so assert the flag is
+# actually set rather than finding out after a round trip to Apple.
+#
+# Deliberately NOT spctl --assess here: an app that is signed but not yet notarized
+# always reports "rejected / source=Unnotarized Developer ID", so gating on it would
+# abort every release before it could be notarized. That check belongs after stapling.
+#
+# Captured, not piped. `grep -q` exits the moment it matches, which kills codesign
+# with SIGPIPE, and `pipefail` reports that as a failed pipeline — so piping here
+# fails the check precisely when the flag IS set.
+SIGN_INFO="$(codesign -d --verbose=2 "$APP_DIR" 2>&1 || true)"
+
+if ! printf '%s' "$SIGN_INFO" | grep -q "flags=.*runtime"; then
+  echo "error: hardened runtime is not set — notarization would be rejected" >&2
+  exit 1
+fi
+
+# The app has to actually launch. Library validation failures are invisible to
+# codesign and only surface when dyld refuses to map the framework.
+"$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME" & LAUNCH_PID=$!
+sleep 5
+if kill -0 $LAUNCH_PID 2>/dev/null; then
+  kill $LAUNCH_PID
+else
+  echo "error: the app exited on launch — check framework signing and rpath" >&2
+  exit 1
+fi
+
+echo "==> Building DMG"
+# SKIP_BUILD: the app is already built and signed above; rebuilding
+# would discard that signature.
+SKIP_BUILD=1 VERSION="$VERSION" APP_NAME="$APP_NAME" \
+  EXECUTABLE_NAME="$EXECUTABLE_NAME" ./scripts/build-dmg.sh
+codesign --force --sign "$SIGN_IDENTITY" --timestamp "$DMG_PATH"
+
+if [ -z "$NOTARY_PROFILE" ]; then
+  echo "==> Skipping notarization (NOTARY_PROFILE not set)"
+  echo "    Unnotarized builds are blocked by Gatekeeper on other people's Macs."
+else
+  echo "==> Notarizing (this takes a few minutes)"
+  xcrun notarytool submit "$DMG_PATH" --keychain-profile "$NOTARY_PROFILE" --wait
+
+  echo "==> Stapling"
+  xcrun stapler staple "$DMG_PATH"
+  xcrun stapler validate "$DMG_PATH"
+
+  # Now it should pass, and this is the check that actually reflects what a user
+  # downloading the DMG will experience.
+  echo "==> Gatekeeper assessment"
+  spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG_PATH"
+fi
+
+echo "==> Signing the update for Sparkle"
+SIGN_UPDATE="$(find "$ROOT/.build/artifacts" -name "sign_update" -type f -print -quit)"
+
+ED_SIGNATURE="PASTE_SIGNATURE"
+
+if [ -n "$SIGN_UPDATE" ]; then
+  # Reads the private key from the keychain — it is never written to the repo.
+  # It prints the whole attribute pair; pull just the signature out so the item
+  # below is complete. Hand-copying it is how you ship an update that every
+  # installed copy then refuses, having verified it against the wrong bytes.
+  if SIGN_OUTPUT="$("$SIGN_UPDATE" "$DMG_PATH" 2>&1)"; then
+    ED_SIGNATURE="$(printf '%s' "$SIGN_OUTPUT" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')"
+    [ -n "$ED_SIGNATURE" ] || {
+      ED_SIGNATURE="PASTE_SIGNATURE"
+      echo "warning: could not parse a signature out of: $SIGN_OUTPUT" >&2
+    }
+  else
+    echo "warning: sign_update failed: $SIGN_OUTPUT" >&2
+    echo "         generate keys once with Sparkle's generate_keys." >&2
+  fi
+else
+  echo "warning: sign_update not found in Sparkle's artifacts" >&2
+fi
+
+SIZE="$(stat -f%z "$DMG_PATH")"
+
+# The README tells people to compare this against what they downloaded, so it has
+# to exist for every release. Computed here rather than by hand, because a release
+# published without one turns that promise into a lie.
+SHA256="$(shasum -a 256 "$DMG_PATH" | cut -d' ' -f1)"
+
+cat <<SUMMARY
+
+==> Done: $DMG_PATH  (${SIZE} bytes)
+
+Put this in the GitHub release notes, where the README points people to find it:
+
+  shasum -a 256 $DMG_NAME
+  $SHA256
+
+Add an <item> to appcast.xml, then commit it — that file IS the update feed:
+
+  <item>
+    <title>$VERSION</title>
+    <sparkle:version>$BUILD_NUMBER</sparkle:version>
+    <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+    <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+    <enclosure
+      url="https://github.com/iannuttall/portman/releases/download/v$VERSION/$DMG_NAME"
+      length="$SIZE"
+      type="application/octet-stream"
+      sparkle:edSignature="$ED_SIGNATURE" />
+  </item>
+
+SUMMARY

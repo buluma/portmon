@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>portman</title>
+    <description>Updates for portman</description>
+    <language>en</language>
+
+    <!--
+      Sparkle reads this file to find updates, straight from raw.githubusercontent.
+      Committing an <item> here is what ships an update — nothing else publishes it.
+      scripts/release.sh prints a ready-made block with the length and signature
+      already filled in. Newest first.
+    -->
+
+    <item>
+      <title>0.3.3</title>
+      <pubDate>Fri, 07 Aug 2026 14:03:53 +0000</pubDate>
+      <sparkle:version>7</sparkle:version>
+      <sparkle:shortVersionString>0.3.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <p>You can now stop exactly the servers you choose, without filtering the list
+        or touching anything else.</p>
+        <ul>
+          <li>The new selection control replaces each status dot with a checkbox while
+          selection mode is active.</li>
+          <li>Checked rows stay aligned with the normal list and have separate
+          highlights that remain easy to scan.</li>
+          <li>The footer counts only your checked servers and asks for confirmation
+          before stopping them.</li>
+          <li>Arrow keys and Return work in selection mode, and Escape backs out without
+          killing anything.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/iannuttall/portman/releases/download/v0.3.3/portman-0.3.3.dmg"
+        length="4487141"
+        type="application/octet-stream"
+        sparkle:edSignature="5PJ6x9BpbShcx6yYWLu41cXLgqPehULYNsmgZGRSzqbCkz+3yzGuM5tiXFKvjroI8pOEDwKBbdUHexSEk+jBCQ==" />
+    </item>
+
+    <item>
+      <title>0.3.2</title>
+      <pubDate>Mon, 03 Aug 2026 20:14:36 +0000</pubDate>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>0.3.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <p>Repeated package names now tell you which project they belong to, and the
+        scrollbar takes up less room.</p>
+        <ul>
+          <li>Rows with the same package name include the shortest useful part of their
+          path. For example, two apps called "site" now read "ian.is / site" and
+          "islamabad-v1 / site".</li>
+          <li>The panel uses a narrower scrollbar while still following your macOS
+          scroll-bar visibility setting.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/iannuttall/portman/releases/download/v0.3.2/portman-0.3.2.dmg"
+        length="4468194"
+        type="application/octet-stream"
+        sparkle:edSignature="KbMPpGSr7dNK+HVWEG3xDAdWAdR/QWCyFWPmpnFP/Rscv2tvFRlcIBQqGx8w17ek2SQZ0jFzly7SRCVSIvZzAQ==" />
+    </item>
+
+    <item>
+      <title>0.3.1</title>
+      <pubDate>Sun, 26 Jul 2026 11:44:02 +0000</pubDate>
+      <sparkle:version>5</sparkle:version>
+      <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <p>Updates stay out of your way, and Settings looks like a Mac settings
+        window.</p>
+        <ul>
+          <li>A new version waits in the panel footer as a button naming it, rather than
+          putting a dialog in front of whatever you were doing. Portman lives in the menu
+          bar, so that dialog usually opened behind your work, where you might never
+          notice it.</li>
+          <li>Asking for an update now closes the panel first. The update window used to
+          open underneath the panel, and you had to dismiss the panel by hand before you
+          could read or click it.</li>
+          <li>Settings tabs moved up into the title bar with icons above the labels, the
+          way macOS does it. Each tab sizes the window to its own content, so no pane ends
+          in a band of empty space.</li>
+          <li>The Ignore Rules tab tells you when nothing is ignored, instead of showing
+          an empty list four hundred points tall.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/iannuttall/portman/releases/download/v0.3.1/portman-0.3.1.dmg"
+        length="4446757"
+        type="application/octet-stream"
+        sparkle:edSignature="Dlb6yAleK3HSyA5Q/RvXA/mhtgj9qesczTDjIieSJ48Jjt95HH6Gpmf4HP0z37E7GS3kCu3yMcniipWAgpf0AQ==" />
+    </item>
+
+    <item>
+      <title>0.3.0</title>
+      <pubDate>Sun, 26 Jul 2026 10:26:59 +0000</pubDate>
+      <sparkle:version>4</sparkle:version>
+      <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <p>The menu bar now shows you when something needs attention, instead of waiting
+        for you to open the panel and find it.</p>
+        <ul>
+          <li>The icon takes an orange dot when a port has more than one listener, when a
+          server has outlived the folder it came from, or when it accepts connections and
+          then never answers.</li>
+          <li>Hover it and the tooltip names the problem. "Port 3000 has more than one
+          listener" tells you what to do about it. "1 issue" does not.</li>
+          <li>A new problem blinks the dot twice and then settles. Nothing pulses at you
+          all day, and it follows Reduce motion.</li>
+        </ul>
+      ]]></description>
+      <enclosure
+        url="https://github.com/iannuttall/portman/releases/download/v0.3.0/portman-0.3.0.dmg"
+        length="4424844"
+        type="application/octet-stream"
+        sparkle:edSignature="EWfd4bgt1uTwKMfhmUhJLK4veuc9KzAajnHFZF7B5aGceVxi5ClYRUSqM1po3SBQaO/fA0tIebf8AQDik+1OAQ==" />
+    </item>
+
+    <item>
+      <title>0.2.0</title>
+      <pubDate>Sat, 25 Jul 2026 20:15:00 +0000</pubDate>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+        <p>First public release.</p>
+      ]]></description>
+      <enclosure
+        url="https://github.com/iannuttall/portman/releases/download/v0.2.0/portman-0.2.0.dmg"
+        length="4403565"
+        type="application/octet-stream"
+        sparkle:edSignature="ciebtQ73rxioiKEq2Ywxb6KgK1y4XYR+AOzGWzslmKsaY6/jbPT2VFdAhF32QK8nLaJzk/7SAY761dlTNlm8BA==" />
+    </item>
+
+  </channel>
+</rss>
