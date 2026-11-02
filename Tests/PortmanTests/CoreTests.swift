@@ -9,7 +9,7 @@ final class PortScannerTests: XCTestCase {
         let output = """
         p1234
         cnode
-        Liannuttall
+        Lbuluma
         n127.0.0.1:3000
         n[::1]:3000
         p5678
