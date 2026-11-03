@@ -16,13 +16,14 @@ jobs:
       - name: Build app and DMG
         env:
           VERSION: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
           SIGN_IDENTITY: '-'
         run: |
-          VERSION="${VERSION#v}" SIGN_IDENTITY="$SIGN_IDENTITY" ./scripts/build-app.sh
+          VERSION="${VERSION#v}" BUILD_NUMBER="$((7 + RUN_NUMBER))" SIGN_IDENTITY="$SIGN_IDENTITY" ./scripts/build-app.sh
           VERSION="${VERSION#v}" APP_NAME=Portmon EXECUTABLE_NAME=portmon SKIP_BUILD=1 ./scripts/build-dmg.sh
 
       - name: Create checksum
-        run: shasum -a 256 "dist/portmon-${GITHUB_REF_NAME#v}.dmg" > "dist/portmon-${GITHUB_REF_NAME#v}.dmg.sha256"
+        run: cd dist && shasum -a 256 "portmon-${GITHUB_REF_NAME#v}.dmg" > "portmon-${GITHUB_REF_NAME#v}.dmg.sha256"
 
       - name: Publish GitHub release
         env:

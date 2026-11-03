@@ -22,19 +22,27 @@ done
 
 swift build "${BUILD_ARGS[@]}"
 BUILD_DIR="$(swift build "${BUILD_ARGS[@]}" --show-bin-path)"
-EXECUTABLE="$BUILD_DIR/portmon"
-FRAMEWORK="$(find "$ROOT/.build/artifacts" -name Sparkle.framework -type d -path '*macos*' -print -quit)"
-
-if [[ -z "$FRAMEWORK" ]]; then
-    echo "error: Sparkle.framework not found in SwiftPM artifacts" >&2
-    exit 1
+if ((${#PROGRAM_ARGS[@]})); then
+    EXECUTABLE="$BUILD_DIR/portmon"
+else
+    EXECUTABLE="$BUILD_DIR/portmon-app"
 fi
 
 RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/portmon-run.XXXXXX")"
 trap 'rm -rf "$RUN_DIR"' EXIT
 cp "$EXECUTABLE" "$RUN_DIR/portmon"
-cp -R "$FRAMEWORK" "$RUN_DIR/"
-if ! otool -l "$RUN_DIR/portmon" | grep -Fq 'path @executable_path ('; then
-    install_name_tool -add_rpath "@executable_path" "$RUN_DIR/portmon"
+if [[ "$EXECUTABLE" == "$BUILD_DIR/portmon-app" ]]; then
+    FRAMEWORK="$(find "$ROOT/.build/artifacts" -name Sparkle.framework -type d -path '*macos*' -print -quit)"
+    if [[ -z "$FRAMEWORK" ]]; then
+        echo "error: Sparkle.framework not found in SwiftPM artifacts" >&2
+        exit 1
+    fi
+    cp -R "$FRAMEWORK" "$RUN_DIR/"
+    if ! otool -l "$RUN_DIR/portmon" | grep -Fq 'path @executable_path ('; then
+        install_name_tool -add_rpath "@executable_path" "$RUN_DIR/portmon"
+    fi
 fi
-exec "$RUN_DIR/portmon" "${PROGRAM_ARGS[@]}"
+set +e
+"$RUN_DIR/portmon" "${PROGRAM_ARGS[@]}"
+STATUS=$?
+exit "$STATUS"
