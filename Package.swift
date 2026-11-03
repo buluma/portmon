@@ -8,22 +8,35 @@ let package = Package(
         .macOS(.v15)
     ],
     products: [
-        .executable(name: "portmon", targets: ["Portmon"])
+        .library(name: "PortmonCore", targets: ["PortmonCore"]),
+        .executable(name: "portmon", targets: ["PortmonCLI"]),
+        .executable(name: "portmon-app", targets: ["PortmonApp"])
     ],
     dependencies: [
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
     ],
     targets: [
+        .target(
+            name: "PortmonCore",
+            path: "Sources/PortmonCore"
+        ),
         .executableTarget(
-            name: "Portmon",
+            name: "PortmonCLI",
+            dependencies: ["PortmonCore"],
+            path: "Sources/PortmonCLI"
+        ),
+        .executableTarget(
+            name: "PortmonApp",
             dependencies: [
+                "PortmonCore",
                 .product(name: "Sparkle", package: "Sparkle")
             ],
-            path: "Sources/Portmon"
+            path: "Sources/Portmon",
+            exclude: []
         ),
         .testTarget(
             name: "PortmonTests",
-            dependencies: ["Portmon"],
+            dependencies: ["PortmonCore"],
             path: "Tests/PortmonTests"
         )
     ]

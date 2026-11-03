@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 /// The app's own identity, in one place.

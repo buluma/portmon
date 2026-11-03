@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 /// Everything the app remembers between launches.

@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 enum TunnelError: LocalizedError {

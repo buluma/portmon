@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Without this, every container shows up as `com.docker.backend` on some port,
 /// which tells you nothing and offers to kill Docker Desktop itself.
-enum DockerScanner {
+public enum DockerScanner {
     /// Docker Desktop, Colima, OrbStack and Homebrew all install the CLI somewhere
     /// different. Checking one hardcoded path silently disabled the whole feature
     /// for anyone not on an Intel-era Docker Desktop install.
@@ -104,7 +104,7 @@ enum DockerScanner {
 
     // MARK: - Actions
 
-    static func stop(containerIDs: [String]) {
+    public static func stop(containerIDs: [String]) {
         guard let docker = executablePath(), !containerIDs.isEmpty else { return }
         _ = run(docker, ["stop"] + containerIDs)
     }

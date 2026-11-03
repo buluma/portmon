@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 /// One list row: a primary listener plus any sibling ports belonging to the same

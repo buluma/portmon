@@ -1,3 +1,5 @@
+import PortmonCore
+
 import SwiftUI
 
 /// One line in the list: status, port, what it is, and how it's doing.

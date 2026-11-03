@@ -1,6 +1,6 @@
 import XCTest
 
-@testable import Portmon
+@testable import PortmonCore
 
 // MARK: - lsof parsing
 
@@ -577,7 +577,7 @@ final class TunnelURLTests: XCTestCase {
     func testExtractsURLFromABannerLine() {
         let line = "|  https://random-words-here.trycloudflare.com                     |"
         XCTAssertEqual(
-            TunnelService.extractURL(from: line),
+            TunnelURL.extract(from: line),
             "https://random-words-here.trycloudflare.com"
         )
     }
@@ -585,14 +585,14 @@ final class TunnelURLTests: XCTestCase {
     func testExtractsURLFromALogLine() {
         let line = "2026-07-25T09:30:00Z INF +----+ Your quick Tunnel has been created! Visit it at https://abc-def-123.trycloudflare.com"
         XCTAssertEqual(
-            TunnelService.extractURL(from: line),
+            TunnelURL.extract(from: line),
             "https://abc-def-123.trycloudflare.com"
         )
     }
 
     func testIgnoresUnrelatedLines() {
-        XCTAssertNil(TunnelService.extractURL(from: "INF Requesting new quick Tunnel on trycloudflare.com..."))
-        XCTAssertNil(TunnelService.extractURL(from: "https://example.com"))
-        XCTAssertNil(TunnelService.extractURL(from: ""))
+        XCTAssertNil(TunnelURL.extract(from: "INF Requesting new quick Tunnel on trycloudflare.com..."))
+        XCTAssertNil(TunnelURL.extract(from: "https://example.com"))
+        XCTAssertNil(TunnelURL.extract(from: ""))
     }
 }

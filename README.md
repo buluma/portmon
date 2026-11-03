@@ -140,11 +140,14 @@ checkable.
 **Nothing leaves your Mac.** No analytics, no telemetry, no accounts. The only network
 requests are to your own localhost ports, and to Cloudflare if you explicitly share one.
 
-**Signed and notarised**, so macOS can verify it hasn't been tampered with since it was built:
+**Ad-hoc signed by GitHub Actions.** This lets macOS verify the bundle structure, but it is not
+Apple Developer ID signing or notarization. On first launch, macOS may require you to approve the
+download in Privacy & Security or use Open Anyway. Version tags (`v*`) automatically produce a
+DMG and SHA-256 checksum on the GitHub release:
 
 ```sh
+xattr -cr "/Applications/Portmon.app"
 codesign --verify --deep --strict --verbose=2 /Applications/Portmon.app
-spctl --assess --type execute /Applications/Portmon.app
 ```
 
 **Checksums.** Run this against the file you downloaded:
