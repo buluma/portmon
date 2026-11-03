@@ -116,7 +116,7 @@ struct RootView: View {
     private var optionsMenu: some View {
         Menu {
             Picker("Sort by", selection: $store.sortOrder) {
-                ForEach(SortOrder.allCases, id: \.self) { order in
+                ForEach(PortmonSortOrder.allCases, id: \.self) { order in
                     Text(order.label).tag(order)
                 }
             }

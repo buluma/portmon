@@ -1,11 +1,31 @@
 import Foundation
 
-enum GroupMode: String, CaseIterable, Sendable {
+public enum GroupMode: String, CaseIterable, Sendable {
     case smart, none, project, kind
+
+    public var label: String {
+        switch self {
+        case .smart: return "Smart"
+        case .none: return "Flat"
+        case .project: return "By project"
+        case .kind: return "By kind"
+        }
+    }
 }
 
-enum SortOrder: String, CaseIterable, Sendable {
+public enum PortmonSortOrder: String, CaseIterable, Sendable {
     case port, name, cpu, memory, uptime, recentlyStarted
+
+    public var label: String {
+        switch self {
+        case .port: return "Port"
+        case .name: return "Name"
+        case .cpu: return "CPU"
+        case .memory: return "Memory"
+        case .uptime: return "Uptime"
+        case .recentlyStarted: return "Recently started"
+        }
+    }
 }
 
 /// One list row: a primary listener plus any sibling ports belonging to the same
@@ -14,48 +34,54 @@ enum SortOrder: String, CaseIterable, Sendable {
 /// A Vite project typically holds three or four ports; showing all of them as
 /// peers is what made the old menu unreadable. The primary port gets the row and
 /// the rest are folded into its expanded card.
-struct ServerRowModel: Identifiable, Hashable, Sendable {
-    let entry: ServerEntry
-    let related: [ServerEntry]
-    let projectQualifier: String?
+public struct ServerRowModel: Identifiable, Hashable, Sendable {
+    public let entry: ServerEntry
+    public let related: [ServerEntry]
+    public let projectQualifier: String?
 
-    init(entry: ServerEntry, related: [ServerEntry], projectQualifier: String? = nil) {
+    public init(entry: ServerEntry, related: [ServerEntry], projectQualifier: String? = nil) {
         self.entry = entry
         self.related = related
         self.projectQualifier = projectQualifier
     }
 
-    var id: String { entry.id }
+    public var id: String { entry.id }
 
-    var allPIDs: [Int32] {
+    public var allPIDs: [Int32] {
         Array(Set(([entry] + related).flatMap(\.pids))).sorted()
     }
 
-    var portCount: Int { related.count + 1 }
+    public var portCount: Int { related.count + 1 }
 }
 
 /// One thing currently worth interrupting someone about, in the form the status item
 /// needs it: what kind, which port, and what to call it.
-struct ServerIssue: Identifiable, Hashable, Sendable {
-    enum Kind: String, Sendable, Hashable {
+public struct ServerIssue: Identifiable, Hashable, Sendable {
+    public enum Kind: String, Sendable, Hashable {
         case conflict
         case stale
         case orphan
         case hung
     }
 
-    let kind: Kind
-    let port: Int
-    let name: String
+    public let kind: Kind
+    public let port: Int
+    public let name: String
+
+    public init(kind: Kind, port: Int, name: String) {
+        self.kind = kind
+        self.port = port
+        self.name = name
+    }
 
     /// Stable for as long as it's the same problem, so the status item can tell a new
     /// issue from one it has already flagged and only pull the eye once per problem.
-    var id: String { "\(kind.rawValue):\(port)" }
+    public var id: String { "\(kind.rawValue):\(port)" }
 
     /// Written as a finding rather than a label. This ends up in the status item's
     /// tooltip, which is the only place the menu bar has room to say what's wrong,
     /// and "1 issue" would only tell you to go looking for it.
-    var sentence: String {
+    public var sentence: String {
         switch kind {
         case .conflict: return "Port \(port) has more than one listener"
         case .stale: return "\(name) on \(port) is from a worktree that's been deleted"
@@ -65,8 +91,8 @@ struct ServerIssue: Identifiable, Hashable, Sendable {
     }
 }
 
-struct ServerSection: Identifiable, Hashable, Sendable {
-    enum Style: String, Sendable, Hashable {
+public struct ServerSection: Identifiable, Hashable, Sendable {
+    public enum Style: String, Sendable, Hashable {
         case pinned
         case conflict
         case stale
@@ -76,30 +102,37 @@ struct ServerSection: Identifiable, Hashable, Sendable {
         case kind
     }
 
-    let id: String
-    let title: String?
-    let style: Style
-    let rows: [ServerRowModel]
+    public let id: String
+    public let title: String?
+    public let style: Style
+    public let rows: [ServerRowModel]
 
-    var isCollapsible: Bool {
+    public init(id: String, title: String?, style: Style, rows: [ServerRowModel]) {
+        self.id = id
+        self.title = title
+        self.style = style
+        self.rows = rows
+    }
+
+    public var isCollapsible: Bool {
         style == .stale || style == .orphan || style == .project
     }
 
     /// Dead and abandoned servers are worth listing but not worth reading every
     /// time the panel opens, so they start folded away.
-    var startsCollapsed: Bool {
+    public var startsCollapsed: Bool {
         style == .stale || style == .orphan
     }
 }
 
 /// Pure list-shaping: search, sort, fold, group. No I/O, no state — every
 /// decision the list makes is reproducible from its inputs.
-enum ListShaper {
+public enum ListShaper {
     // MARK: - Search
 
     /// `/pattern/` runs a regular expression; anything else is token matching
     /// where every token must appear somewhere in the entry.
-    static func matches(_ entry: ServerEntry, query: String) -> Bool {
+    public static func matches(_ entry: ServerEntry, query: String) -> Bool {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return true }
 
@@ -119,13 +152,13 @@ enum ListShaper {
     }
 
     /// Returns the inner pattern of a `/…/` query, or nil when it isn't one.
-    static func regexPattern(in query: String) -> String? {
+    public static func regexPattern(in query: String) -> String? {
         guard query.count >= 2, query.hasPrefix("/"), query.hasSuffix("/") else { return nil }
         let pattern = String(query.dropFirst().dropLast())
         return pattern.isEmpty ? nil : pattern
     }
 
-    static func searchHaystack(for entry: ServerEntry) -> String {
+    public static func searchHaystack(for entry: ServerEntry) -> String {
         var parts: [String] = [
             "\(entry.port)",
             entry.title,
@@ -147,7 +180,7 @@ enum ListShaper {
 
     // MARK: - Sort
 
-    static func sorted(_ entries: [ServerEntry], by order: SortOrder) -> [ServerEntry] {
+    public static func sorted(_ entries: [ServerEntry], by order: PortmonSortOrder) -> [ServerEntry] {
         switch order {
         case .port:
             return entries.sorted(by: PortScanner.byPortThenPID)
@@ -220,7 +253,7 @@ enum ListShaper {
     ///
     /// The primary port is the lowest non-helper port — a Vite app on 5173 with an
     /// HMR socket on 24678 shows as 5173, not as two equal rows.
-    static func folded(_ entries: [ServerEntry], order: SortOrder) -> [ServerRowModel] {
+    public static func folded(_ entries: [ServerEntry], order: PortmonSortOrder) -> [ServerRowModel] {
         var groups: [String: [ServerEntry]] = [:]
         var groupOrder: [String] = []
 
@@ -257,11 +290,11 @@ enum ListShaper {
 
     // MARK: - Sections
 
-    static func sections(
+    public static func sections(
         for entries: [ServerEntry],
         pinnedKeys: Set<String>,
         mode: GroupMode,
-        order: SortOrder
+        order: PortmonSortOrder
     ) -> [ServerSection] {
         let pinned = entries.filter { pinnedKeys.contains($0.pinKey) }
         let rest = entries.filter { !pinnedKeys.contains($0.pinKey) }
@@ -450,7 +483,7 @@ enum ListShaper {
 
     /// Ports with more than one distinct listener. Surfaced as a row badge rather
     /// than a separate section, so a conflicting server appears exactly once.
-    static func conflictPorts(in entries: [ServerEntry]) -> Set<Int> {
+    public static func conflictPorts(in entries: [ServerEntry]) -> Set<Int> {
         var seen: [Int: Set<String>] = [:]
 
         for entry in entries {
@@ -468,7 +501,7 @@ enum ListShaper {
     /// At most one issue per port. Both halves of a conflict are the same conflict, and
     /// a stale worktree holding a contested port is usually the *cause* of that conflict
     /// — one kill fixes both, so counting it twice would overstate how much is wrong.
-    static func issues(in entries: [ServerEntry], contestedPorts: Set<Int>) -> [ServerIssue] {
+    public static func issues(in entries: [ServerEntry], contestedPorts: Set<Int>) -> [ServerIssue] {
         var issues: [ServerIssue] = []
         var claimed: Set<Int> = []
 
