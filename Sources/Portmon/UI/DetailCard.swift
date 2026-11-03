@@ -24,6 +24,10 @@ struct DetailCard: View {
                 pathRow(path)
             }
 
+            if let evidence = detectionEvidence {
+                evidenceSection(evidence)
+            }
+
             statStrip
 
             if let health = entry.health, health.state != .unknown {
@@ -134,6 +138,46 @@ struct DetailCard: View {
     }
 
     // MARK: Rows
+
+    private var detectionEvidence: [String]? {
+        if let container = entry.container {
+            var evidence = ["Docker reported this container as \(container.name)."]
+            if let project = container.composeProject, let service = container.composeService {
+                evidence.append("Compose labels identify \(project)/\(service).")
+            }
+            return evidence
+        }
+
+        guard let project = entry.project else { return nil }
+        var evidence: [String] = []
+        if let root = project.root {
+            evidence.append("Project root found from a package or project marker at \(root).")
+        } else if let cwd = project.cwd {
+            evidence.append("Using process working directory \(cwd); no project root marker was found.")
+        } else {
+            evidence.append("Project name inferred from the process command; working directory was unavailable.")
+        }
+        if let framework = project.frameworkLabel {
+            evidence.append("\(framework) detected from project files or process command.")
+        } else {
+            evidence.append("No supported framework signature was found.")
+        }
+        return evidence
+    }
+
+    private func evidenceSection(_ evidence: [String]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.tight) {
+            Text("Why this identification")
+                .font(Theme.Typography.sectionHeader)
+                .foregroundStyle(.tertiary)
+            ForEach(evidence, id: \.self) { detail in
+                Text(detail)
+                    .font(Theme.Typography.meta)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+        }
+    }
 
     private func pathRow(_ path: String) -> some View {
         HStack(spacing: Theme.Space.snug) {
