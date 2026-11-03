@@ -140,22 +140,28 @@ checkable.
 **Nothing leaves your Mac.** No analytics, no telemetry, no accounts. The only network
 requests are to your own localhost ports, and to Cloudflare if you explicitly share one.
 
-**Signed and notarised**, so macOS can verify it hasn't been tampered with since it was built:
+**Ad-hoc signed by GitHub Actions.** This lets macOS verify the bundle structure, but it is not
+Apple Developer ID signing or notarization. Version tags (`v*`) automatically produce a DMG and
+SHA-256 checksum file on the GitHub release. First verify the downloaded DMG against its published
+checksum asset:
+
+```sh
+cd ~/Downloads
+shasum -a 256 -c portmon-0.3.3.dmg.sha256
+```
+
+After installing, verify the app signature:
 
 ```sh
 codesign --verify --deep --strict --verbose=2 /Applications/Portmon.app
-spctl --assess --type execute /Applications/Portmon.app
 ```
 
-**Checksums.** Run this against the file you downloaded:
+If macOS blocks the verified app, use **Open Anyway** in Privacy & Security. As a last resort,
+after verifying the checksum and signature, you can remove the quarantine attribute:
 
 ```sh
-shasum -a 256 ~/Downloads/portmon-*.dmg
+xattr -cr "/Applications/Portmon.app"
 ```
-
-The expected value is in the
-[release notes](https://github.com/buluma/portmon/releases/latest) for that version. If the
-two don't match, the file isn't the one I built, so don't open it.
 
 **Or build it yourself.** See below. The build scripts are in this repo too.
 
@@ -171,7 +177,7 @@ Nothing else requires a permission prompt. There is no privileged helper.
 
 ```sh
 swift build                  # build
-swift run portmon            # run from source
+swift run portmon-app        # run the app from source
 swift run portmon --list     # scan and print as TSV, no UI
 swift test                   # pure-logic tests
 make build                   # build dist/Portmon.app

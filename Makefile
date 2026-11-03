@@ -10,7 +10,7 @@ install publish-local update-local:
 	./scripts/install-local.sh
 
 run:
-	swift run portmon
+	./scripts/run.sh
 
 list:
-	swift run portmon --list
+	./scripts/run.sh -- --list

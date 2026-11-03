@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 enum TunnelError: LocalizedError {
@@ -53,25 +55,6 @@ actor TunnelService {
 
     static var isInstalled: Bool {
         executablePath() != nil
-    }
-
-    /// `https://<something>.trycloudflare.com`, wherever it appears in the log line —
-    /// cloudflared prints it inside an ASCII banner, not on a line of its own.
-    static func extractURL(from line: String) -> String? {
-        let pattern = #"https://[a-z0-9][a-z0-9-]*\.trycloudflare\.com"#
-
-        guard
-            let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
-            let match = regex.firstMatch(
-                in: line,
-                range: NSRange(line.startIndex..<line.endIndex, in: line)
-            ),
-            let range = Range(match.range, in: line)
-        else {
-            return nil
-        }
-
-        return String(line[range])
     }
 
     /// Note the `=` form: cloudflared rejects `--http-host-header <value>` as a
@@ -226,7 +209,7 @@ actor TunnelService {
     }
 
     private func consume(line: String, port: Int) {
-        if urls[port] == nil, let url = Self.extractURL(from: line) {
+        if urls[port] == nil, let url = TunnelURL.extract(from: line) {
             urls[port] = url
             waiters.removeValue(forKey: port)?.resume(returning: url)
             return

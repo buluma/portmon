@@ -1,3 +1,5 @@
+import PortmonCore
+
 import AppKit
 import Darwin
 import Foundation
@@ -29,7 +31,7 @@ final class ServerStore {
         didSet { inputsChanged() }
     }
 
-    var sortOrder: SortOrder = Preferences.sortOrder {
+    var sortOrder: PortmonSortOrder = Preferences.sortOrder {
         didSet {
             Preferences.sortOrder = sortOrder
             inputsChanged()

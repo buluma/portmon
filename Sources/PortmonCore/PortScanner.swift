@@ -4,8 +4,10 @@ import Foundation
 ///
 /// Runs entirely off the main actor — every call here shells out or hits the
 /// filesystem, and the panel must stay responsive while it does.
-struct PortScanner: Sendable {
-    func scan() -> [ServerEntry] {
+public struct PortScanner: Sendable {
+    public init() {}
+
+    public func scan() -> [ServerEntry] {
         let snapshots = Self.snapshots()
         guard !snapshots.isEmpty else { return [] }
 
@@ -171,7 +173,7 @@ struct PortScanner: Sendable {
         }
     }
 
-    static func byPortThenPID(_ lhs: ServerEntry, _ rhs: ServerEntry) -> Bool {
+    public static func byPortThenPID(_ lhs: ServerEntry, _ rhs: ServerEntry) -> Bool {
         if lhs.port == rhs.port {
             return (lhs.primaryPID ?? 0) < (rhs.primaryPID ?? 0)
         }

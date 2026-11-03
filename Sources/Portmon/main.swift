@@ -1,3 +1,5 @@
+import PortmonCore
+
 import AppKit
 import Foundation
 import ServiceManagement

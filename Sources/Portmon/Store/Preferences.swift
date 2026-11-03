@@ -1,3 +1,5 @@
+import PortmonCore
+
 import Foundation
 
 /// Everything the app remembers between launches.
@@ -179,8 +181,8 @@ enum Preferences {
 
     // MARK: View state
 
-    static var sortOrder: SortOrder {
-        get { SortOrder(rawValue: defaults.string(forKey: Key.sortOrder) ?? "") ?? .port }
+    static var sortOrder: PortmonSortOrder {
+        get { PortmonSortOrder(rawValue: defaults.string(forKey: Key.sortOrder) ?? "") ?? .port }
         set { defaults.set(newValue.rawValue, forKey: Key.sortOrder) }
     }
 
@@ -196,43 +198,6 @@ enum Preferences {
 }
 
 // MARK: - View state types
-
-enum SortOrder: String, CaseIterable, Sendable {
-    case port
-    case name
-    case cpu
-    case memory
-    case uptime
-    case recentlyStarted
-
-    var label: String {
-        switch self {
-        case .port: return "Port"
-        case .name: return "Name"
-        case .cpu: return "CPU"
-        case .memory: return "Memory"
-        case .uptime: return "Uptime"
-        case .recentlyStarted: return "Recently started"
-        }
-    }
-}
-
-enum GroupMode: String, CaseIterable, Sendable {
-    /// Sections only where they earn their keep: pinned, conflicts, stale worktrees.
-    case smart
-    case none
-    case project
-    case kind
-
-    var label: String {
-        switch self {
-        case .smart: return "Smart"
-        case .none: return "Flat"
-        case .project: return "By project"
-        case .kind: return "By kind"
-        }
-    }
-}
 
 enum RowDensity: String, CaseIterable, Sendable {
     /// Port, name, framework, and anything that's wrong. Nothing else.

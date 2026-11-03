@@ -10,7 +10,7 @@ import Foundation
 /// `isDeveloperLaunched` returns false for those, so callers must combine it with other
 /// evidence (a project root on disk, the command line, the working directory) rather than
 /// treating it as the only gate. The raw helpers are exposed for exactly that.
-enum ProcessAncestry {
+public enum ProcessAncestry {
     /// Enough to cross `launchd → terminal → shell → npm → node → esbuild` and then some,
     /// while still bounding the syscall cost of a scan that touches every listener.
     static let maxDepth = 12
@@ -66,7 +66,7 @@ enum ProcessAncestry {
     }
 
     /// True when any ancestor is a shell, terminal, editor or coding agent.
-    static func isDeveloperLaunched(pid: Int32) -> Bool {
+    public static func isDeveloperLaunched(pid: Int32) -> Bool {
         ancestors(of: pid).contains { isDeveloperTool(name: name(of: $0), path: path(of: $0)) }
     }
 
@@ -101,7 +101,7 @@ enum ProcessAncestry {
     /// Matches on the executable's own name first, then on any path component — an agent
     /// running as `/Users/x/.bun/bin/opencode` and one running as a plain `node` under
     /// `/Applications/Cursor.app/…` both need to resolve.
-    static func isDeveloperTool(name: String?, path: String?) -> Bool {
+    public static func isDeveloperTool(name: String?, path: String?) -> Bool {
         if let name, matchesName(name) { return true }
 
         guard let path else { return false }

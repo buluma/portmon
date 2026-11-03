@@ -3,14 +3,14 @@ import Foundation
 // MARK: - Kind
 
 /// Broad category of a listener, used for filter chips and section grouping.
-enum ServerKind: String, Codable, Sendable, Hashable, CaseIterable {
+public enum ServerKind: String, Codable, Sendable, Hashable, CaseIterable {
     case dev
     case docker
     case database
     case system
     case other
 
-    var label: String {
+    public var label: String {
         switch self {
         case .dev: return "Dev"
         case .docker: return "Docker"
@@ -20,7 +20,7 @@ enum ServerKind: String, Codable, Sendable, Hashable, CaseIterable {
         }
     }
 
-    var symbol: String {
+    public var symbol: String {
         switch self {
         case .dev: return "hammer"
         case .docker: return "shippingbox"
@@ -32,14 +32,14 @@ enum ServerKind: String, Codable, Sendable, Hashable, CaseIterable {
 }
 
 /// How far a listener can be reached from.
-enum Exposure: String, Codable, Sendable, Hashable {
+public enum Exposure: String, Codable, Sendable, Hashable {
     /// Bound to 127.0.0.1 / ::1 only — this Mac and nothing else.
     case loopback
     /// Bound to 0.0.0.0, ::, or a specific LAN address. Anyone on the same
     /// network can reach it.
     case network
 
-    var label: String {
+    public var label: String {
         switch self {
         case .loopback: return "This Mac only"
         case .network: return "Reachable on your network"
@@ -48,7 +48,7 @@ enum Exposure: String, Codable, Sendable, Hashable {
 }
 
 /// Whether the project behind a listener still exists on disk.
-enum EntryState: String, Codable, Sendable, Hashable {
+public enum EntryState: String, Codable, Sendable, Hashable {
     case active
     case orphan
     case staleWorktree
@@ -56,7 +56,7 @@ enum EntryState: String, Codable, Sendable, Hashable {
 
 // MARK: - Metrics
 
-enum EnergyLevel: String, Codable, Sendable, Hashable, Comparable {
+public enum EnergyLevel: String, Codable, Sendable, Hashable, Comparable {
     case low
     case medium
     case high
@@ -69,36 +69,44 @@ enum EnergyLevel: String, Codable, Sendable, Hashable, Comparable {
         }
     }
 
-    static func < (lhs: EnergyLevel, rhs: EnergyLevel) -> Bool {
+    public static func < (lhs: EnergyLevel, rhs: EnergyLevel) -> Bool {
         lhs.order < rhs.order
     }
 
-    var label: String { rawValue }
+    public var label: String { rawValue }
 }
 
 /// A point-in-time reading for one process, sampled through libproc.
 ///
 /// Every field is optional on purpose: processes owned by another user (or by root)
 /// reject `proc_pidinfo`, and a missing reading must render as `—` rather than zero.
-struct ProcessSample: Codable, Sendable, Hashable {
-    var cpuPercent: Double?
-    var residentBytes: UInt64?
-    var threads: Int?
-    var startedAt: Date?
-    var energyLevel: EnergyLevel?
+public struct ProcessSample: Codable, Sendable, Hashable {
+    public var cpuPercent: Double?
+    public var residentBytes: UInt64?
+    public var threads: Int?
+    public var startedAt: Date?
+    public var energyLevel: EnergyLevel?
 
-    var uptime: TimeInterval? {
+    public init(cpuPercent: Double? = nil, residentBytes: UInt64? = nil, threads: Int? = nil, startedAt: Date? = nil, energyLevel: EnergyLevel? = nil) {
+        self.cpuPercent = cpuPercent
+        self.residentBytes = residentBytes
+        self.threads = threads
+        self.startedAt = startedAt
+        self.energyLevel = energyLevel
+    }
+
+    public var uptime: TimeInterval? {
         startedAt.map { Date().timeIntervalSince($0) }
     }
 
-    var isEmpty: Bool {
+    public var isEmpty: Bool {
         cpuPercent == nil && residentBytes == nil && threads == nil && startedAt == nil
     }
 }
 
 // MARK: - Health
 
-enum HealthState: String, Codable, Sendable, Hashable {
+public enum HealthState: String, Codable, Sendable, Hashable {
     /// Not probed yet.
     case unknown
     /// Probe in flight.
@@ -114,63 +122,87 @@ enum HealthState: String, Codable, Sendable, Hashable {
     case refused
 }
 
-struct HealthReport: Codable, Sendable, Hashable {
-    var state: HealthState = .unknown
-    var statusCode: Int?
-    var latency: TimeInterval?
-    var pageTitle: String?
-    var serverHeader: String?
-    var scheme: String = "http"
-    var checkedAt: Date?
+public struct HealthReport: Codable, Sendable, Hashable {
+    public var state: HealthState = .unknown
+    public var statusCode: Int?
+    public var latency: TimeInterval?
+    public var pageTitle: String?
+    public var serverHeader: String?
+    public var scheme: String = "http"
+    public var checkedAt: Date?
+
+    public init(state: HealthState = .unknown, statusCode: Int? = nil, latency: TimeInterval? = nil, pageTitle: String? = nil, serverHeader: String? = nil, scheme: String = "http", checkedAt: Date? = nil) {
+        self.state = state
+        self.statusCode = statusCode
+        self.latency = latency
+        self.pageTitle = pageTitle
+        self.serverHeader = serverHeader
+        self.scheme = scheme
+        self.checkedAt = checkedAt
+    }
 
     static let unknown = HealthReport()
 
-    var isServingHTTP: Bool {
+    public var isServingHTTP: Bool {
         state == .healthy
     }
 }
 
 // MARK: - Tunnel
 
-enum TunnelStatus: String, Codable, Sendable, Hashable {
+public enum TunnelStatus: String, Codable, Sendable, Hashable {
     case starting
     case active
     case failed
 }
 
 /// A Cloudflare quick tunnel putting one local port on the public internet.
-struct TunnelInfo: Codable, Sendable, Hashable {
-    var status: TunnelStatus
-    var url: String?
-    var error: String?
-    var startedAt: Date?
+public struct TunnelInfo: Codable, Sendable, Hashable {
+    public var status: TunnelStatus
+    public var url: String?
+    public var error: String?
+    public var startedAt: Date?
+
+    public init(status: TunnelStatus, url: String? = nil, error: String? = nil, startedAt: Date? = nil) {
+        self.status = status
+        self.url = url
+        self.error = error
+        self.startedAt = startedAt
+    }
 }
 
 // MARK: - Git
 
-struct GitStatus: Codable, Sendable, Hashable {
-    var branch: String?
-    var dirtyCount: Int?
-    var isWorktree: Bool = false
-    var isDetached: Bool = false
+public struct GitStatus: Codable, Sendable, Hashable {
+    public var branch: String?
+    public var dirtyCount: Int?
+    public var isWorktree: Bool = false
+    public var isDetached: Bool = false
 
-    var isClean: Bool {
+    public init(branch: String?, dirtyCount: Int? = nil, isWorktree: Bool = false, isDetached: Bool = false) {
+        self.branch = branch
+        self.dirtyCount = dirtyCount
+        self.isWorktree = isWorktree
+        self.isDetached = isDetached
+    }
+
+    public var isClean: Bool {
         (dirtyCount ?? 0) == 0
     }
 }
 
 // MARK: - Project
 
-struct ProjectMetadata: Codable, Hashable, Sendable {
-    let cwd: String?
-    let root: String?
-    let name: String
-    let framework: String?
-    let frameworkVersion: String?
-    let isOrphan: Bool
-    let isStaleWorktree: Bool
+public struct ProjectMetadata: Codable, Hashable, Sendable {
+    public let cwd: String?
+    public let root: String?
+    public let name: String
+    public let framework: String?
+    public let frameworkVersion: String?
+    public let isOrphan: Bool
+    public let isStaleWorktree: Bool
 
-    init(
+    public init(
         cwd: String?,
         root: String?,
         name: String,
@@ -188,11 +220,11 @@ struct ProjectMetadata: Codable, Hashable, Sendable {
         self.isStaleWorktree = isStaleWorktree
     }
 
-    var path: String? {
+    public var path: String? {
         root ?? cwd
     }
 
-    var displayPath: String? {
+    public var displayPath: String? {
         guard let path else { return nil }
         return path.replacingOccurrences(
             of: NSHomeDirectory(),
@@ -202,7 +234,7 @@ struct ProjectMetadata: Codable, Hashable, Sendable {
     }
 
     /// `Astro 5.2` when we know the version, `Astro` when we only know the framework.
-    var frameworkLabel: String? {
+    public var frameworkLabel: String? {
         guard let framework else { return nil }
         guard let frameworkVersion else { return framework }
         return "\(framework) \(frameworkVersion)"
@@ -211,17 +243,17 @@ struct ProjectMetadata: Codable, Hashable, Sendable {
 
 // MARK: - Docker
 
-struct DockerContainer: Codable, Hashable, Sendable {
-    let id: String
-    let name: String
-    let image: String
-    let composeProject: String?
-    let composeService: String?
-    let workingDirectory: String?
-    let hostPort: Int
-    let containerPort: Int?
+public struct DockerContainer: Codable, Hashable, Sendable {
+    public let id: String
+    public let name: String
+    public let image: String
+    public let composeProject: String?
+    public let composeService: String?
+    public let workingDirectory: String?
+    public let hostPort: Int
+    public let containerPort: Int?
 
-    var displayName: String {
+    public var displayName: String {
         if let composeProject, let composeService {
             return "\(composeProject)/\(composeService)"
         }
@@ -229,7 +261,7 @@ struct DockerContainer: Codable, Hashable, Sendable {
         return name
     }
 
-    var displayPath: String? {
+    public var displayPath: String? {
         guard let workingDirectory, !workingDirectory.isEmpty else { return nil }
         return workingDirectory.replacingOccurrences(
             of: NSHomeDirectory(),
@@ -239,7 +271,7 @@ struct DockerContainer: Codable, Hashable, Sendable {
     }
 
     /// `8080 → 80` when Docker forwards to a different container port.
-    var portMappingLabel: String {
+    public var portMappingLabel: String {
         guard let containerPort, containerPort != hostPort else { return "\(hostPort)" }
         return "\(hostPort) → \(containerPort)"
     }
@@ -248,11 +280,11 @@ struct DockerContainer: Codable, Hashable, Sendable {
 // MARK: - Raw scan output
 
 /// One `(pid, command, user, ports)` tuple as parsed straight out of `lsof`.
-struct ProcessSnapshot: Sendable {
-    var pid: Int32 = 0
-    var command = ""
-    var user = ""
-    var ports: [Int: Set<String>] = [:]
+public struct ProcessSnapshot: Sendable {
+    public var pid: Int32 = 0
+    public var command = ""
+    public var user = ""
+    public var ports: [Int: Set<String>] = [:]
 }
 
 // MARK: - Entry
@@ -261,22 +293,22 @@ struct ProcessSnapshot: Sendable {
 ///
 /// The scan produces the immutable half; metrics, health and git arrive later and
 /// independently, so the UI can render a useful row before every enricher has finished.
-struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
+public struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
     // Scan output
-    let port: Int
-    let pids: [Int32]
-    let command: String
-    let user: String
-    let addresses: [String]
-    let project: ProjectMetadata?
-    let container: DockerContainer?
+    public let port: Int
+    public let pids: [Int32]
+    public let command: String
+    public let user: String
+    public let addresses: [String]
+    public let project: ProjectMetadata?
+    public let container: DockerContainer?
 
     // Enrichment
-    var metrics: ProcessSample?
-    var health: HealthReport?
-    var git: GitStatus?
+    public var metrics: ProcessSample?
+    public var health: HealthReport?
+    public var git: GitStatus?
 
-    init(
+    public init(
         port: Int,
         pids: [Int32],
         command: String,
@@ -302,17 +334,17 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
 
     /// Stable across scans so SwiftUI animates rows instead of replacing them.
     /// A restarted server gets a new pid, and a new identity, which is what we want.
-    var id: String {
+    public var id: String {
         "\(port):\(primaryPID ?? 0)"
     }
 
-    var primaryPID: Int32? {
+    public var primaryPID: Int32? {
         pids.min()
     }
 
     // MARK: Classification
 
-    var kind: ServerKind {
+    public var kind: ServerKind {
         if container != nil { return .docker }
         if project != nil { return .dev }
         if Self.databaseCommands.contains(where: { command.lowercased().contains($0) }) {
@@ -322,14 +354,14 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
         return .other
     }
 
-    var state: EntryState {
+    public var state: EntryState {
         guard let project else { return .active }
         if project.isStaleWorktree { return .staleWorktree }
         if project.isOrphan { return .orphan }
         return .active
     }
 
-    var hasIssue: Bool {
+    public var hasIssue: Bool {
         state != .active || health?.state == .hung
     }
 
@@ -338,7 +370,7 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
     /// A wildcard bind, or any address that isn't loopback, means other machines on
     /// the network can reach it. This is the difference between a dev server only you
     /// can see and one the whole coffee shop can.
-    var exposure: Exposure {
+    public var exposure: Exposure {
         for address in addresses {
             let cleaned = address
                 .trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
@@ -364,14 +396,14 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
 
     /// Hidden unless "Show System Ports" is on. Docker and orphans always stay visible —
     /// an orphan on a low port is exactly the thing worth surfacing.
-    var hiddenByDefault: Bool {
+    public var hiddenByDefault: Bool {
         if container != nil { return false }
         if project?.isOrphan == true { return false }
         return isSystemProcess
     }
 
     /// Debug/HMR sidecar ports that shouldn't compete with a project's real app port.
-    var isLikelyHelperPort: Bool {
+    public var isLikelyHelperPort: Bool {
         if port >= 9229 && port <= 9329 { return true }
         if port >= 49152 { return true }
         return false
@@ -380,33 +412,33 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
     // MARK: Display
 
     /// The bold half of a row: the project, container, or app name.
-    var title: String {
+    public var title: String {
         if let container { return container.displayName }
         if let project { return project.name }
         return prettyCommand
     }
 
     /// The dimmer qualifier next to the title — framework, image, or nothing.
-    var subtitle: String? {
+    public var subtitle: String? {
         if let container { return container.image }
         if let project { return project.frameworkLabel ?? prettyCommand }
         return nil
     }
 
-    var badge: String? {
+    public var badge: String? {
         if container != nil { return "Docker" }
         return project?.frameworkLabel
     }
 
-    var displayPath: String? {
+    public var displayPath: String? {
         container?.displayPath ?? project?.displayPath
     }
 
-    var path: String? {
+    public var path: String? {
         container?.workingDirectory ?? project?.path
     }
 
-    var prettyCommand: String {
+    public var prettyCommand: String {
         let lower = command.lowercased()
 
         for (needle, pretty) in Self.commandDisplayNames where lower.contains(needle) {
@@ -418,7 +450,7 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
 
     /// Single-line form, kept for the `--list` CLI output only. The panel composes
     /// its own layout from the structured fields above.
-    var singleLineDescription: String {
+    public var singleLineDescription: String {
         var parts = ["\(port)"]
         if state == .staleWorktree { parts.append("Stale Worktree") }
         if state == .orphan { parts.append("Orphan") }
@@ -430,7 +462,7 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
     // MARK: Pins and ignores
 
     /// Groups every port of one project or container under a single pin.
-    var pinKey: String {
+    public var pinKey: String {
         if let container {
             return "docker:\(container.composeProject ?? ""):\(container.composeService ?? ""):\(container.name)"
         }
@@ -442,13 +474,13 @@ struct ServerEntry: Identifiable, Codable, Hashable, Sendable {
         return "process:\(command):\(port)"
     }
 
-    var pinNoun: String {
+    public var pinNoun: String {
         if container != nil { return "Container" }
         if project != nil { return "Project" }
         return "Port"
     }
 
-    var ignoreTargetKey: String? {
+    public var ignoreTargetKey: String? {
         if let container {
             return (container.composeProject.map { "\($0)/\(container.composeService ?? container.name)" } ?? container.name)
                 .lowercased()
