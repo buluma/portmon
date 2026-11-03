@@ -54,7 +54,7 @@ BUILD_DIR="$(swift build -c release "${ARCH_FLAGS[@]}" --show-bin-path)"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
-cp "$BUILD_DIR/portmon" "$MACOS_DIR/$EXECUTABLE_NAME"
+cp "$BUILD_DIR/portmon-app" "$MACOS_DIR/$EXECUTABLE_NAME"
 
 # SwiftPM leaves the full symbol table in a release build — it's over half the
 # binary and nothing at runtime reads it. `-x` drops local symbols only, so
