@@ -20,6 +20,7 @@ final class ServerStore {
     private(set) var entries: [ServerEntry] = []
     private(set) var isScanning = false
     private(set) var lastScan: Date?
+    private(set) var scanError: String?
     private(set) var networkAddress: String?
     private(set) var isWarmStart = false
 
@@ -299,6 +300,7 @@ final class ServerStore {
         timer = nil
         scanTask?.cancel()
         scanTask = nil
+        isScanning = false
     }
 
     // MARK: - Scanning
@@ -319,7 +321,7 @@ final class ServerStore {
             let scanner = self.scanner
             let scanned = await Task.detached(priority: .utility) {
                 (
-                    entries: scanner.scan(),
+                    entries: Result { try scanner.scan() },
                     address: AppLauncher.localIPAddress()
                 )
             }.value
@@ -327,7 +329,13 @@ final class ServerStore {
             guard !Task.isCancelled else { return }
 
             networkAddress = scanned.address
-            await applyScan(scanned.entries)
+            switch scanned.entries {
+            case .success(let entries):
+                scanError = nil
+                await applyScan(entries)
+            case .failure(let error):
+                scanError = error.localizedDescription
+            }
         }
     }
 
@@ -410,9 +418,19 @@ final class ServerStore {
     }
 
     private func probe(ports: [Int]) async {
-        let reports = await healthProbe.probe(ports: ports)
+        let original = Dictionary(grouping: entries, by: \.port).mapValues { Set($0.flatMap(\.pids)) }
+        let probed = await healthProbe.probe(ports: ports)
+        guard !Task.isCancelled, !probed.isEmpty else { return }
+        let current = Dictionary(grouping: entries, by: \.port).mapValues { Set($0.flatMap(\.pids)) }
+        var reports: [Int: HealthReport] = [:]
+        for (port, report) in probed {
+            if let before = original[port], before == current[port] {
+                reports[port] = report
+            } else {
+                await healthProbe.invalidate(port: port)
+            }
+        }
         guard !Task.isCancelled, !reports.isEmpty else { return }
-
         healthByPort.merge(reports) { _, new in new }
 
         var updated = entries

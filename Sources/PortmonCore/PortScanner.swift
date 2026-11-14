@@ -7,8 +7,8 @@ import Foundation
 public struct PortScanner: Sendable {
     public init() {}
 
-    public func scan() -> [ServerEntry] {
-        let snapshots = Self.snapshots()
+    public func scan() throws -> [ServerEntry] {
+        let snapshots = try Self.snapshots()
         guard !snapshots.isEmpty else { return [] }
 
         let metadataByPID = ProjectDetector.metadataByPID(for: snapshots)
@@ -38,12 +38,31 @@ public struct PortScanner: Sendable {
 
     // MARK: - lsof
 
-    static func snapshots() -> [ProcessSnapshot] {
-        guard let result = ProcessRunner.run("/usr/sbin/lsof", ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pcLn"]),
-              result.status == 0 || result.status == 1,
-              let output = String(data: result.output, encoding: .utf8) else { return [] }
+    public enum ScanError: Error, LocalizedError {
+        case unavailable
+        case failed(Int32)
+        case invalidOutput
 
-        return parse(output)
+        public var errorDescription: String? {
+            switch self {
+            case .unavailable: return "Could not run the listener scan."
+            case .failed(let status): return "Listener scan failed (exit \(status))."
+            case .invalidOutput: return "Listener scan returned invalid output."
+            }
+        }
+    }
+
+    static func snapshots() throws -> [ProcessSnapshot] {
+        guard let result = ProcessRunner.run("/usr/sbin/lsof", ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pcLn"]) else {
+            throw ScanError.unavailable
+        }
+        return try snapshots(output: result.output, status: result.status, stderr: result.stderr)
+    }
+
+    static func snapshots(output: Data, status: Int32, stderr: Data = Data()) throws -> [ProcessSnapshot] {
+        guard status == 0 || status == 1 && output.isEmpty && stderr.isEmpty else { throw ScanError.failed(status) }
+        guard let text = String(data: output, encoding: .utf8) else { throw ScanError.invalidOutput }
+        return parse(text)
     }
 
     /// Parses `lsof -F` field output: one field per line, first character is the

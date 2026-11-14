@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        TunnelOwnership.cleanOrphans()
 
         let panel = PanelController(store: store)
         panelController = panel
