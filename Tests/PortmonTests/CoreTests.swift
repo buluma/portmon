@@ -596,3 +596,17 @@ final class TunnelURLTests: XCTestCase {
         XCTAssertNil(TunnelURL.extract(from: ""))
     }
 }
+
+final class ProcessRunnerTests: XCTestCase {
+    func testCapturesOutputAndExitStatus() {
+        let result = ProcessRunner.run("/bin/sh", ["-c", "printf result; exit 7"])
+        XCTAssertEqual(result?.status, 7)
+        XCTAssertEqual(result.flatMap { String(data: $0.output, encoding: .utf8) }, "result")
+    }
+
+    func testTimeoutBoundsSilentProcess() {
+        let start = Date()
+        XCTAssertNil(ProcessRunner.run("/bin/sleep", ["5"], timeout: 0.1))
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+    }
+}

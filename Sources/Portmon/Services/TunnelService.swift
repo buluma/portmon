@@ -35,6 +35,7 @@ actor TunnelService {
     private var readers: [Int: Task<Void, Never>] = [:]
     private var urls: [Int: String] = [:]
     private var waiters: [Int: CheckedContinuation<String, Error>] = [:]
+    private var generations: [Int: UUID] = [:]
     private var lastError: [Int: String] = [:]
 
     private static let searchPaths = [
@@ -91,7 +92,7 @@ actor TunnelService {
 
     private static func resolves(host: String) -> Bool {
         guard FileManager.default.isExecutableFile(atPath: "/usr/bin/dig") else {
-            return true
+            return false
         }
 
         let process = Process()
@@ -105,7 +106,7 @@ actor TunnelService {
         do {
             try process.run()
         } catch {
-            return true
+            return false
         }
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
@@ -120,19 +121,6 @@ actor TunnelService {
     }
 
     // MARK: - Lifecycle
-
-    /// Kills tunnels left behind by a previous run.
-    ///
-    /// A quick tunnel dies with its process, so a crash leaves an orphan holding a
-    /// public URL that nothing in the UI knows about any more.
-    static func killOrphans() {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
-        process.arguments = ["-f", "cloudflared.*tunnel.*--url"]
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
-        try? process.run()
-    }
 
     func start(port: Int, timeout: TimeInterval = 25) async throws -> String {
         guard let path = Self.executablePath() else { throw TunnelError.notInstalled }
@@ -152,9 +140,11 @@ actor TunnelService {
 
         try process.run()
         processes[port] = process
-        beginReading(port: port, handle: pipe.fileHandleForReading)
+        let generation = UUID()
+        generations[port] = generation
+        beginReading(port: port, generation: generation, handle: pipe.fileHandleForReading)
 
-        scheduleTimeout(port: port, after: timeout)
+        scheduleTimeout(port: port, generation: generation, after: timeout)
 
         return try await withCheckedThrowingContinuation { continuation in
             if let url = urls[port] {
@@ -167,6 +157,7 @@ actor TunnelService {
     }
 
     func stop(port: Int) {
+        generations.removeValue(forKey: port)
         readers.removeValue(forKey: port)?.cancel()
 
         if let process = processes.removeValue(forKey: port), process.isRunning {
@@ -194,21 +185,22 @@ actor TunnelService {
     ///
     /// It has to keep draining after the URL is found: stop reading and the pipe
     /// buffer fills, which blocks cloudflared and takes the tunnel down with it.
-    private func beginReading(port: Int, handle: FileHandle) {
+    private func beginReading(port: Int, generation: UUID, handle: FileHandle) {
         readers[port] = Task { [weak self] in
             do {
                 for try await line in handle.bytes.lines {
-                    await self?.consume(line: line, port: port)
+                    await self?.consume(line: line, port: port, generation: generation)
                 }
             } catch {
                 // Pipe closed — handled by the completion below.
             }
 
-            await self?.readingEnded(port: port)
+            await self?.readingEnded(port: port, generation: generation)
         }
     }
 
-    private func consume(line: String, port: Int) {
+    private func consume(line: String, port: Int, generation: UUID) {
+        guard generations[port] == generation else { return }
         if urls[port] == nil, let url = TunnelURL.extract(from: line) {
             urls[port] = url
             waiters.removeValue(forKey: port)?.resume(returning: url)
@@ -220,19 +212,21 @@ actor TunnelService {
         }
     }
 
-    private func readingEnded(port: Int) {
+    private func readingEnded(port: Int, generation: UUID) {
+        guard generations[port] == generation else { return }
         guard let waiter = waiters.removeValue(forKey: port) else { return }
         waiter.resume(throwing: TunnelError.ended(lastError[port]))
     }
 
-    private func scheduleTimeout(port: Int, after seconds: TimeInterval) {
+    private func scheduleTimeout(port: Int, generation: UUID, after seconds: TimeInterval) {
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
-            await self?.timeOut(port: port)
+            await self?.timeOut(port: port, generation: generation)
         }
     }
 
-    private func timeOut(port: Int) {
+    private func timeOut(port: Int, generation: UUID) {
+        guard generations[port] == generation else { return }
         guard let waiter = waiters.removeValue(forKey: port) else { return }
         waiter.resume(throwing: TunnelError.timedOut)
         stop(port: port)

@@ -101,6 +101,7 @@ final class ServerStore {
     var pendingConfirmation: PendingConfirmation?
     /// Public tunnels, keyed by port.
     var tunnels: [Int: TunnelInfo] = [:]
+    @ObservationIgnored private var tunnelAttempts: [Int: UUID] = [:]
     /// Transient footer message when an action didn't do what the UI implied.
     var actionMessage: String?
 
@@ -127,6 +128,7 @@ final class ServerStore {
     /// A scan produces entries with no health, so without this the probe would run
     /// again every cycle — which is exactly what made the list flicker. A port is
     /// checked once when it first appears, and again only on an explicit refresh.
+    @ObservationIgnored private var probeInFlight = false
     @ObservationIgnored private var healthByPort: [Int: HealthReport] = [:]
 
     private static let openInterval: TimeInterval = 2
@@ -312,7 +314,7 @@ final class ServerStore {
             guard let self else { return }
 
             isScanning = true
-            defer { isScanning = false }
+            defer { if !Task.isCancelled { isScanning = false } }
 
             let scanner = self.scanner
             let scanned = await Task.detached(priority: .utility) {
@@ -331,6 +333,13 @@ final class ServerStore {
 
     private func applyScan(_ scanned: [ServerEntry]) async {
         var enriched = scanned
+        let previous = Dictionary(grouping: entries, by: \.port).mapValues { Set($0.flatMap(\.pids)) }
+        let current = Dictionary(grouping: scanned, by: \.port).mapValues { Set($0.flatMap(\.pids)) }
+        for (port, pids) in current where previous[port] != pids {
+            healthByPort.removeValue(forKey: port)
+            await healthProbe.invalidate(port: port)
+        }
+        guard !Task.isCancelled else { return }
 
         // Metrics for everything, since sorting by CPU needs the whole list.
         let pids = Array(Set(enriched.flatMap(\.pids)))
@@ -344,6 +353,7 @@ final class ServerStore {
         })
 
         for root in roots {
+            guard !Task.isCancelled else { return }
             if let status = await gitInspector.status(forRoot: root) {
                 gitByRoot[root] = status
             }
@@ -361,6 +371,7 @@ final class ServerStore {
             enriched[index].health = healthByPort[enriched[index].port]
         }
 
+        guard !Task.isCancelled else { return }
         pruneRecentlyKilled()
         pruneHealth(keeping: Set(enriched.map(\.port)))
         commit(enriched)
@@ -370,17 +381,20 @@ final class ServerStore {
         // Awaiting it here made a scan outlast the 2s poll whenever a few servers
         // were wedged, and re-checking known ports every cycle rewrote the list
         // continuously.
-        guard healthProbeEnabled else { return }
+        guard healthProbeEnabled, !probeInFlight else { return }
 
         let unchecked = enriched.filter {
-            healthByPort[$0.port] == nil && $0.kind != .system && $0.kind != .database
+            let checkedAt = healthByPort[$0.port]?.checkedAt ?? .distantPast
+            return Date().timeIntervalSince(checkedAt) >= 60 && $0.kind != .system && $0.kind != .database
         }
 
         guard !unchecked.isEmpty else { return }
 
-        probeTask?.cancel()
+        probeInFlight = true
         probeTask = Task { [weak self] in
-            await self?.probe(ports: unchecked.map(\.port))
+            guard let self else { return }
+            await self.probe(ports: unchecked.map(\.port))
+            self.probeInFlight = false
         }
     }
 
@@ -583,7 +597,7 @@ final class ServerStore {
         }
 
         signal(pids: row.allPIDs)
-        suppress(ports: [row.entry.port] + row.related.map(\.port))
+
     }
 
     /// Anything with no undo asks first: a bulk kill, or putting a port on the
@@ -631,7 +645,7 @@ final class ServerStore {
 
         let pids = targets.filter { $0.entry.container == nil }.flatMap(\.allPIDs)
         signal(pids: Array(Set(pids)).sorted())
-        suppress(ports: targets.flatMap { [$0.entry.port] + $0.related.map(\.port) })
+
     }
 
     /// Sends SIGTERM and reports what actually happened.
@@ -691,10 +705,13 @@ final class ServerStore {
         guard !unique.isEmpty else { return }
 
         Task { [weak self] in
-            await Task.detached(priority: .utility) {
+            let stopped = await Task.detached(priority: .utility) {
                 DockerScanner.stop(containerIDs: unique)
             }.value
-
+            if !stopped {
+                self?.actionMessage = "Could not stop the container."
+                self?.clearActionMessageLater()
+            }
             self?.refresh(force: true)
         }
     }
@@ -707,8 +724,19 @@ final class ServerStore {
             return
         }
 
-        signal(pids: row.allPIDs)
-        AppLauncher.runCommand(command, in: path, bundleID: Preferences.terminalBundleID)
+        let pids = row.allPIDs
+        signal(pids: pids)
+        Task { [weak self] in
+            for _ in 0..<50 {
+                if pids.allSatisfy({ Darwin.kill($0, 0) != 0 && errno == ESRCH }) {
+                    AppLauncher.runCommand(command, in: path, bundleID: Preferences.terminalBundleID)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            self?.actionMessage = "Could not restart: the previous process is still running."
+            self?.clearActionMessageLater()
+        }
     }
 
     func canRestart(_ row: ServerRowModel) -> Bool {
@@ -746,6 +774,8 @@ final class ServerStore {
 
     func startTunnel(port: Int) {
         tunnels[port] = TunnelInfo(status: .starting)
+        let attempt = UUID()
+        tunnelAttempts[port] = attempt
 
         Task { [weak self] in
             guard let self else { return }
@@ -757,14 +787,19 @@ final class ServerStore {
                 // that isn't resolvable yet means the first click fails and macOS
                 // caches that failure, which reads as a broken tunnel.
                 if let host = TunnelService.hostname(from: url) {
-                    _ = await TunnelService.waitUntilResolvable(host: host)
+                    guard await TunnelService.waitUntilResolvable(host: host) else {
+                        throw TunnelError.ended("Tunnel DNS did not resolve.")
+                    }
                 }
 
+                guard tunnelAttempts[port] == attempt else { return }
                 tunnels[port] = TunnelInfo(status: .active, url: url, startedAt: Date())
                 copy(url)
                 actionMessage = "Public URL copied to the clipboard."
                 clearActionMessageLater()
             } catch {
+                guard tunnelAttempts[port] == attempt else { return }
+                await tunnelService.stop(port: port)
                 tunnels[port] = TunnelInfo(status: .failed, error: error.localizedDescription)
                 actionMessage = error.localizedDescription
                 clearActionMessageLater()
@@ -773,6 +808,7 @@ final class ServerStore {
     }
 
     func stopTunnel(port: Int) {
+        tunnelAttempts.removeValue(forKey: port)
         tunnels.removeValue(forKey: port)
 
         Task { [weak self] in
@@ -781,6 +817,7 @@ final class ServerStore {
     }
 
     func stopAllTunnels() async {
+        tunnelAttempts.removeAll()
         tunnels.removeAll()
         await tunnelService.stopAll()
     }
