@@ -6,6 +6,7 @@ public enum ProcessRunner {
     public struct Result: Sendable {
         public let output: Data
         public let status: Int32
+        public let stderr: Data
     }
 
     public static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval = 10) -> Result? {
@@ -13,36 +14,39 @@ public enum ProcessRunner {
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
         process.standardInput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
         let pipe = Pipe()
+        let errors = Pipe()
         process.standardOutput = pipe
+        process.standardError = errors
         let exited = DispatchSemaphore(value: 0)
         process.terminationHandler = { _ in exited.signal() }
         let deadline = DispatchTime.now() + timeout
         do { try process.run() } catch { return nil }
         let buffer = OutputBuffer()
-        let done = DispatchSemaphore(value: 0)
-        DispatchQueue.global(qos: .utility).async {
-            while true {
-                let data = pipe.fileHandleForReading.availableData
-                if data.isEmpty { break }
-                if buffer.data.count < 8 * 1024 * 1024 {
-                    buffer.data.append(data.prefix(8 * 1024 * 1024 - buffer.data.count))
+        let errorBuffer = OutputBuffer()
+        let readers = DispatchGroup()
+        for (handle, destination) in [(pipe.fileHandleForReading, buffer), (errors.fileHandleForReading, errorBuffer)] {
+            readers.enter()
+            DispatchQueue.global(qos: .utility).async {
+                while true {
+                    let data = handle.availableData
+                    if data.isEmpty { break }
+                    if destination.data.count < 8 * 1024 * 1024 {
+                        destination.data.append(data.prefix(8 * 1024 * 1024 - destination.data.count))
+                    }
                 }
+                readers.leave()
             }
-            done.signal()
         }
-        if done.wait(timeout: deadline) == .timedOut || exited.wait(timeout: deadline) == .timedOut {
+        if exited.wait(timeout: deadline) == .timedOut {
             if process.isRunning { process.terminate() }
-            if done.wait(timeout: .now() + 0.5) == .timedOut {
-                if process.isRunning { kill(process.processIdentifier, SIGKILL) }
-                // Descendants may still hold the pipe; do not wait indefinitely.
-                return nil
+            if exited.wait(timeout: .now() + 0.5) == .timedOut, process.isRunning {
+                kill(process.processIdentifier, SIGKILL)
             }
-            process.waitUntilExit()
             return nil
         }
-        return Result(output: buffer.data, status: process.terminationStatus)
+        guard readers.wait(timeout: deadline) == .success else { return nil }
+        return Result(output: buffer.data, status: process.terminationStatus, stderr: errorBuffer.data)
     }
 
     private final class OutputBuffer: @unchecked Sendable {

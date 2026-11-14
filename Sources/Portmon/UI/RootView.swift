@@ -274,16 +274,19 @@ struct RootView: View {
     }
 
     private var emptyStateSymbol: String {
+        if store.scanError != nil && store.entries.isEmpty { return "exclamationmark.triangle" }
         if store.isScanning && store.entries.isEmpty { return "circle.dotted" }
         return store.isFiltering ? "line.3.horizontal.decrease.circle" : "moon.zzz"
     }
 
     private var emptyStateTitle: String {
+        if store.scanError != nil && store.entries.isEmpty { return "Scan failed" }
         if store.isScanning && store.entries.isEmpty { return "Scanning…" }
         return store.isFiltering ? "Nothing matches" : "No servers listening"
     }
 
     private var emptyStateHint: String? {
+        if let error = store.scanError { return error }
         if store.isScanning && store.entries.isEmpty { return nil }
 
         if store.isFiltering {
@@ -344,7 +347,7 @@ struct RootView: View {
         HStack(spacing: Theme.Space.regular) {
             Text(summary)
                 .font(Theme.Typography.meta)
-                .foregroundStyle(store.actionMessage == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Theme.Colour.hung))
+                .foregroundStyle(store.actionMessage == nil && store.scanError == nil ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Theme.Colour.hung))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -393,6 +396,7 @@ struct RootView: View {
 
     private var summary: String {
         if let message = store.actionMessage { return message }
+        if let error = store.scanError { return error }
         if store.isScanning && store.entries.isEmpty { return "Scanning…" }
 
         if store.isSelectingServers {

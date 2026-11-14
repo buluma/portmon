@@ -160,7 +160,7 @@ struct DetailCard: View {
             evidence.append("Project name inferred from the process command; working directory was unavailable.")
         }
         if let framework = project.frameworkLabel {
-            evidence.append("\(framework) detected from project files or process command.")
+            evidence.append("\(framework) inferred from project files or the process command; dependencies alone may not identify the active server.")
         } else {
             evidence.append("No supported framework signature was found.")
         }

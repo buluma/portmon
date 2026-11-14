@@ -24,7 +24,14 @@ func loginStatusText(_ status: SMAppService.Status) -> String {
 
 /// Prints the scan as TSV. The fastest way to check detection without the UI.
 func printList() {
-    for entry in PortScanner().scan() {
+    let entries: [ServerEntry]
+    do {
+        entries = try PortScanner().scan()
+    } catch {
+        writeError(error.localizedDescription)
+        exit(1)
+    }
+    for entry in entries {
         let pids = entry.pids.map(String.init).joined(separator: ",")
         let framework = entry.container == nil
             ? (entry.project?.frameworkLabel ?? entry.prettyCommand)

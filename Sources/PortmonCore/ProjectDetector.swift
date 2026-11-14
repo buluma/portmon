@@ -13,7 +13,6 @@ enum ProjectDetector {
             let cwdByPID = cwdByPID(for: uniquePIDs)
             let commandByPID = commandByPID(for: uniquePIDs)
             var metadata: [Int32: ProjectMetadata] = [:]
-            var metadataByCWD: [String: ProjectMetadata] = [:]
 
             for pid in uniquePIDs {
                 let cwd = cwdByPID[pid]
@@ -24,17 +23,7 @@ enum ProjectDetector {
                     continue
                 }
 
-                let inferred: ProjectMetadata
-
-                if let cwd, let cached = metadataByCWD[cwd] {
-                    inferred = cached
-                } else {
-                    inferred = inferProject(cwd: cwd, command: command)
-
-                    if let cwd {
-                        metadataByCWD[cwd] = inferred
-                    }
-                }
+                let inferred = inferProject(cwd: cwd, command: command)
 
                 if inferred.cwd != nil || inferred.root != nil || inferred.framework != nil {
                     metadata[pid] = inferred
@@ -118,7 +107,7 @@ enum ProjectDetector {
             return result
         }
 
-        private static func inferProject(cwd: String?, command: String?) -> ProjectMetadata {
+        static func inferProject(cwd: String?, command: String?) -> ProjectMetadata {
             let projectRoot = cwd.flatMap(packageRoot(from:)) ?? cwd.flatMap(otherProjectRoot(from:))
             let name = projectName(root: projectRoot, cwd: cwd)
             let framework = frameworkName(root: projectRoot, cwd: cwd, command: command)

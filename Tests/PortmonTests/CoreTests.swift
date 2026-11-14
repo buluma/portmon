@@ -592,6 +592,7 @@ final class TunnelURLTests: XCTestCase {
 
     func testIgnoresUnrelatedLines() {
         XCTAssertNil(TunnelURL.extract(from: "INF Requesting new quick Tunnel on trycloudflare.com..."))
+        XCTAssertNil(TunnelURL.extract(from: "ERR Post https://api.trycloudflare.com/tunnel: connection failed"))
         XCTAssertNil(TunnelURL.extract(from: "https://example.com"))
         XCTAssertNil(TunnelURL.extract(from: ""))
     }
@@ -604,9 +605,51 @@ final class ProcessRunnerTests: XCTestCase {
         XCTAssertEqual(result.flatMap { String(data: $0.output, encoding: .utf8) }, "result")
     }
 
+    func testCapturesStderrWithoutBlocking() {
+        let result = ProcessRunner.run("/bin/sh", ["-c", "dd if=/dev/zero bs=1024 count=256 1>&2 2>/dev/null; printf ok"])
+        XCTAssertEqual(result?.status, 0)
+        XCTAssertEqual(result?.stderr.count, 256 * 1024)
+        XCTAssertEqual(result.flatMap { String(data: $0.output, encoding: .utf8) }, "ok")
+    }
+
     func testTimeoutBoundsSilentProcess() {
         let start = Date()
         XCTAssertNil(ProcessRunner.run("/bin/sleep", ["5"], timeout: 0.1))
         XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+    }
+}
+
+final class ScanFailureTests: XCTestCase {
+    func testEmptyLsofResultIsNotFailure() throws {
+        XCTAssertTrue(try PortScanner.snapshots(output: Data(), status: 1).isEmpty)
+    }
+
+    func testFailedOrInvalidScanIsNotAnEmptyList() {
+        XCTAssertThrowsError(try PortScanner.snapshots(output: Data(), status: 2))
+        XCTAssertThrowsError(try PortScanner.snapshots(output: Data(), status: 1, stderr: Data("denied".utf8)))
+        XCTAssertThrowsError(try PortScanner.snapshots(output: Data([0xff]), status: 0))
+    }
+}
+
+final class ProjectDetectionFixtureTests: XCTestCase {
+    func testNearestPackageInMonorepoWins() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let app = root.appendingPathComponent("apps/site")
+        try FileManager.default.createDirectory(at: app, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try #"{"name":"workspace","dependencies":{"next":"1"}}"#.write(to: root.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+        try #"{"name":"@example/site","dependencies":{"astro":"1"}}"#.write(to: app.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
+        let metadata = ProjectDetector.inferProject(cwd: app.path, command: "node server.js")
+        XCTAssertEqual(metadata.root, app.path)
+        XCTAssertEqual(metadata.name, "site")
+        XCTAssertEqual(metadata.framework, "Astro")
+    }
+
+    func testCommandsInSameDirectoryCanHaveDifferentFrameworks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(ProjectDetector.inferProject(cwd: root.path, command: "node node_modules/.bin/vite").framework, "Vite")
+        XCTAssertEqual(ProjectDetector.inferProject(cwd: root.path, command: "node node_modules/.bin/astro dev").framework, "Astro")
     }
 }

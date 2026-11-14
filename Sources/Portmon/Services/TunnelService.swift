@@ -140,6 +140,7 @@ actor TunnelService {
 
         try process.run()
         processes[port] = process
+        _ = TunnelOwnership.record(pid: process.processIdentifier)
         let generation = UUID()
         generations[port] = generation
         beginReading(port: port, generation: generation, handle: pipe.fileHandleForReading)
