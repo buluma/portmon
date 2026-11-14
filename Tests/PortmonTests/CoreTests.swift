@@ -96,6 +96,16 @@ final class DockerScannerTests: XCTestCase {
         XCTAssertTrue(DockerScanner.portMappings(from: "").isEmpty)
     }
 
+    func testParsesComposeAndStandaloneContainersOnDifferentPorts() {
+        let compose = ["abc", "web", "node:22", "127.0.0.1:3000->3000/tcp", "shop", "web", "/work/shop"].joined(separator: "\t")
+        let standalone = ["def", "db", "postgres:16", "[::]:5432->5432/tcp", "", "", ""].joined(separator: "\t")
+        let containers = DockerScanner.parse(compose + "\n" + standalone)
+        XCTAssertEqual(containers[3000]?.displayName, "shop/web")
+        XCTAssertEqual(containers[3000]?.workingDirectory, "/work/shop")
+        XCTAssertEqual(containers[5432]?.id, "def")
+        XCTAssertNil(containers[5432]?.composeProject)
+    }
+
     func testParsesPSRowsIntoContainers() {
         let row = [
             "abc123", "ianis-db-1", "postgres:16", "0.0.0.0:5432->5432/tcp",
@@ -643,6 +653,16 @@ final class ProjectDetectionFixtureTests: XCTestCase {
         XCTAssertEqual(metadata.root, app.path)
         XCTAssertEqual(metadata.name, "site")
         XCTAssertEqual(metadata.framework, "Astro")
+    }
+
+    func testMissingProjectMarkerDoesNotInventRootOrFramework() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let metadata = ProjectDetector.inferProject(cwd: root.path, command: "python -m http.server")
+        XCTAssertNil(metadata.root)
+        XCTAssertNil(metadata.framework)
+        XCTAssertEqual(metadata.cwd, root.path)
     }
 
     func testCommandsInSameDirectoryCanHaveDifferentFrameworks() throws {

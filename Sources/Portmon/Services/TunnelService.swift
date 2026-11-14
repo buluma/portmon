@@ -31,6 +31,14 @@ enum TunnelError: LocalizedError {
 /// Quick tunnels need no Cloudflare account and no DNS, which is why they're worth
 /// having and named tunnels aren't.
 actor TunnelService {
+    private let executableOverride: String?
+    private let recordsOwnership: Bool
+
+    init(executablePath: String? = nil, recordsOwnership: Bool = true) {
+        self.executableOverride = executablePath
+        self.recordsOwnership = recordsOwnership
+    }
+
     private var processes: [Int: Process] = [:]
     private var readers: [Int: Task<Void, Never>] = [:]
     private var urls: [Int: String] = [:]
@@ -123,7 +131,7 @@ actor TunnelService {
     // MARK: - Lifecycle
 
     func start(port: Int, timeout: TimeInterval = 25) async throws -> String {
-        guard let path = Self.executablePath() else { throw TunnelError.notInstalled }
+        guard let path = executableOverride ?? Self.executablePath() else { throw TunnelError.notInstalled }
 
         if let existing = processes[port], existing.isRunning {
             if let url = urls[port] { return url }
@@ -140,7 +148,7 @@ actor TunnelService {
 
         try process.run()
         processes[port] = process
-        _ = TunnelOwnership.record(pid: process.processIdentifier)
+        if recordsOwnership { _ = TunnelOwnership.record(pid: process.processIdentifier) }
         let generation = UUID()
         generations[port] = generation
         beginReading(port: port, generation: generation, handle: pipe.fileHandleForReading)

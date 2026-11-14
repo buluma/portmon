@@ -108,7 +108,8 @@ final class ServerStore {
 
     // MARK: Collaborators
 
-    @ObservationIgnored private let scanner = PortScanner()
+    @ObservationIgnored private let scan: @Sendable () throws -> [ServerEntry]
+    @ObservationIgnored private let persistSnapshots: Bool
     @ObservationIgnored private let sampler = ProcessMetricsSampler()
     @ObservationIgnored private let gitInspector = GitInspector()
     @ObservationIgnored private let healthProbe = HealthProbe()
@@ -128,18 +129,24 @@ final class ServerStore {
     ///
     /// A scan produces entries with no health, so without this the probe would run
     /// again every cycle — which is exactly what made the list flicker. A port is
-    /// checked once when it first appears, and again only on an explicit refresh.
+    /// checked when it first appears, periodically, and on explicit refresh.
     @ObservationIgnored private var probeInFlight = false
     @ObservationIgnored private var healthByPort: [Int: HealthReport] = [:]
 
     private static let openInterval: TimeInterval = 2
     private static let killGracePeriod: TimeInterval = 6
 
-    private init() {
-        entries = SnapshotCache.load()
+    init(
+        scan: @escaping @Sendable () throws -> [ServerEntry] = { try PortScanner().scan() },
+        useSnapshots: Bool = true,
+        observeSystem: Bool = true
+    ) {
+        self.scan = scan
+        self.persistSnapshots = useSnapshots
+        entries = useSnapshots ? SnapshotCache.load() : []
         isWarmStart = !entries.isEmpty
         rebuildDerived()
-        observeSleepWake()
+        if observeSystem { observeSleepWake() }
     }
 
     // MARK: - Derived list
@@ -318,10 +325,10 @@ final class ServerStore {
             isScanning = true
             defer { if !Task.isCancelled { isScanning = false } }
 
-            let scanner = self.scanner
+            let scan = self.scan
             let scanned = await Task.detached(priority: .utility) {
                 (
-                    entries: Result { try scanner.scan() },
+                    entries: Result { try scan() },
                     address: AppLauncher.localIPAddress()
                 )
             }.value
@@ -384,7 +391,7 @@ final class ServerStore {
         pruneHealth(keeping: Set(enriched.map(\.port)))
         commit(enriched)
 
-        // Probing runs off the scan cycle, and only for ports we haven't checked yet.
+        // Probing runs off the scan cycle, and refreshes stale results periodically.
         //
         // Awaiting it here made a scan outlast the 2s poll whenever a few servers
         // were wedged, and re-checking known ports every cycle rewrote the list
@@ -497,7 +504,7 @@ final class ServerStore {
         lastScan = Date()
         isWarmStart = false
         inputsChanged()
-        SnapshotCache.save(updated)
+        if persistSnapshots { SnapshotCache.save(updated) }
     }
 
     // MARK: - Selection

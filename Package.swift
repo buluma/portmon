@@ -36,7 +36,7 @@ let package = Package(
         ),
         .testTarget(
             name: "PortmonTests",
-            dependencies: ["PortmonCore"],
+            dependencies: ["PortmonCore", "PortmonApp"],
             path: "Tests/PortmonTests"
         )
     ]
