@@ -592,6 +592,7 @@ final class TunnelURLTests: XCTestCase {
 
     func testIgnoresUnrelatedLines() {
         XCTAssertNil(TunnelURL.extract(from: "INF Requesting new quick Tunnel on trycloudflare.com..."))
+        XCTAssertNil(TunnelURL.extract(from: "ERR Post https://api.trycloudflare.com/tunnel: connection failed"))
         XCTAssertNil(TunnelURL.extract(from: "https://example.com"))
         XCTAssertNil(TunnelURL.extract(from: ""))
     }

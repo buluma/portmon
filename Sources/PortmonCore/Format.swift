@@ -36,6 +36,8 @@ public enum TunnelURL {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
               let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..<line.endIndex, in: line)),
               let range = Range(match.range, in: line) else { return nil }
-        return String(line[range])
+        let url = String(line[range])
+        guard URL(string: url)?.host?.lowercased() != "api.trycloudflare.com" else { return nil }
+        return url
     }
 }
