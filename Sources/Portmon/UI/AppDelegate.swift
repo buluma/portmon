@@ -11,10 +11,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        // A quick tunnel lives and dies with its cloudflared process, so a previous
-        // crash can leave one holding a public URL that nothing is tracking.
-        TunnelService.killOrphans()
-
         let panel = PanelController(store: store)
         panelController = panel
 

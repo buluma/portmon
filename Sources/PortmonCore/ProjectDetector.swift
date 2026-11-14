@@ -95,33 +95,9 @@ enum ProjectDetector {
         }
 
         private static func commandByPID(for pids: [Int32]) -> [Int32: String] {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/ps")
-            process.arguments = [
-                "-p",
-                pids.map(String.init).joined(separator: ","),
-                "-o",
-                "pid=",
-                "-o",
-                "command="
-            ]
-
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = Pipe()
-
-            do {
-                try process.run()
-            } catch {
-                return [:]
-            }
-
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-
-            guard let output = String(data: data, encoding: .utf8) else {
-                return [:]
-            }
+            let arguments = ["-p", pids.map(String.init).joined(separator: ","), "-o", "pid=", "-o", "command="]
+            guard let execution = ProcessRunner.run("/bin/ps", arguments), execution.status == 0,
+                  let output = String(data: execution.output, encoding: .utf8) else { return [:] }
 
             var result: [Int32: String] = [:]
 

@@ -39,26 +39,9 @@ public struct PortScanner: Sendable {
     // MARK: - lsof
 
     static func snapshots() -> [ProcessSnapshot] {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/lsof")
-        process.arguments = ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pcLn"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-        } catch {
-            return []
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-
-        guard let output = String(data: data, encoding: .utf8) else {
-            return []
-        }
+        guard let result = ProcessRunner.run("/usr/sbin/lsof", ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pcLn"]),
+              result.status == 0 || result.status == 1,
+              let output = String(data: result.output, encoding: .utf8) else { return [] }
 
         return parse(output)
     }

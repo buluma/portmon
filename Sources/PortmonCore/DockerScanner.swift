@@ -104,31 +104,15 @@ public enum DockerScanner {
 
     // MARK: - Actions
 
-    public static func stop(containerIDs: [String]) {
-        guard let docker = executablePath(), !containerIDs.isEmpty else { return }
-        _ = run(docker, ["stop"] + containerIDs)
+    public static func stop(containerIDs: [String]) -> Bool {
+        guard let docker = executablePath(), !containerIDs.isEmpty else { return false }
+        return run(docker, ["stop"] + containerIDs) != nil
     }
 
     // MARK: - Process
 
     private static func run(_ executable: String, _ arguments: [String]) -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = Pipe()
-
-        do {
-            try process.run()
-        } catch {
-            return nil
-        }
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-
-        return String(data: data, encoding: .utf8)
+        guard let result = ProcessRunner.run(executable, arguments), result.status == 0 else { return nil }
+        return String(data: result.output, encoding: .utf8)
     }
 }
