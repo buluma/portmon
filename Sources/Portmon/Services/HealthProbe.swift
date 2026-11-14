@@ -35,9 +35,13 @@ actor HealthProbe {
     }
 
     private var cache: [Int: CacheEntry] = [:]
+    private var versions: [Int: UInt64] = [:]
+    private var epoch: UInt64 = 0
+    private let probeOverride: (@Sendable (Int) async -> HealthReport)?
 
-    init(ttl: TimeInterval = 10) {
+    init(ttl: TimeInterval = 10, probe: (@Sendable (Int) async -> HealthReport)? = nil) {
         self.ttl = ttl
+        self.probeOverride = probe
     }
 
     // MARK: - Entry points
@@ -58,6 +62,9 @@ actor HealthProbe {
 
         guard !pending.isEmpty else { return results }
         pending.sort()
+        let pendingVersions = Dictionary(uniqueKeysWithValues: pending.map { ($0, versions[$0, default: 0]) })
+        let pendingEpoch = epoch
+        let probeOverride = self.probeOverride
 
         let context = Context(timeout: timeout)
         defer { context.invalidate() }
@@ -67,7 +74,10 @@ actor HealthProbe {
             var started = 0
 
             while started < Self.maxInFlight, let port = iterator.next() {
-                group.addTask { (port, await Self.probe(port: port, context: context)) }
+                group.addTask {
+                    if let probeOverride { return (port, await probeOverride(port)) }
+                    return (port, await Self.probe(port: port, context: context))
+                }
                 started += 1
             }
 
@@ -77,7 +87,10 @@ actor HealthProbe {
                 collected[port] = report
 
                 if let next = iterator.next() {
-                    group.addTask { (next, await Self.probe(port: next, context: context)) }
+                    group.addTask {
+                        if let probeOverride { return (next, await probeOverride(next)) }
+                        return (next, await Self.probe(port: next, context: context))
+                    }
                 }
             }
 
@@ -87,7 +100,9 @@ actor HealthProbe {
         let storedAt = Date()
 
         for (port, report) in probed {
-            cache[port] = CacheEntry(report: report, storedAt: storedAt)
+            if epoch == pendingEpoch && versions[port, default: 0] == pendingVersions[port] {
+                cache[port] = CacheEntry(report: report, storedAt: storedAt)
+            }
             results[port] = report
         }
 
@@ -97,10 +112,12 @@ actor HealthProbe {
     /// Drops the cached report for one port so the next probe hits the wire.
     /// Call this after a restart or a kill.
     func invalidate(port: Int) {
+        versions[port, default: 0] &+= 1
         cache.removeValue(forKey: port)
     }
 
     func invalidateAll() {
+        epoch &+= 1
         cache.removeAll()
     }
 

@@ -41,7 +41,12 @@ enum TunnelOwnership {
     }
 
     static func cleanOrphans() {
-        guard let directory, let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
+        guard let directory else { return }
+        cleanOrphans(in: directory)
+    }
+
+    static func cleanOrphans(in directory: URL) {
+        guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else { return }
         for file in files where file.pathExtension == "json" {
             guard let data = try? Data(contentsOf: file), let record = try? JSONDecoder().decode(Record.self, from: data) else { continue }
             if let currentOwner = identity(record.owner.pid) {
